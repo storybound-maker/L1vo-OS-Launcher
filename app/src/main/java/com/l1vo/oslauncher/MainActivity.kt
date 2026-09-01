@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -137,7 +138,7 @@ private fun L1voLauncherApp() {
             SlotPicker(apps, slotId = editingSlot!!, onDismiss = { editingSlot = null }, onSelect = { app ->
                 saveSlot(context, editingSlot!!, app)
                 editingSlot = null
-                refresh = !refresh
+                refresh++
             })
         }
     }

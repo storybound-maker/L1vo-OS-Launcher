@@ -5,6 +5,9 @@ plugins {
 }
 
 android {
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+        compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
     namespace = "com.l1vo.oslauncher"
     compileSdk = 35
 
@@ -22,45 +25,11 @@ android {
         isCoreLibraryDesugaringEnabled = false
     }
 
-    kotlin {
-        jvmToolchain(17)
-    }
-
     buildFeatures {
         compose = true
     }
 }
 
-// Keep Java and Kotlin bytecode targets identical even when Android Studio
-// runs Gradle with a different JDK. The legacy kotlinOptions assignment is
-// intentional here because it is still honored by Kotlin 2.0.x task wiring.
-tasks.withType<JavaCompile>().configureEach {
-    sourceCompatibility = JavaVersion.VERSION_17.toString()
-    targetCompatibility = JavaVersion.VERSION_17.toString()
-    options.release.set(17)
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
-    }
-    compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-    }
-}
-
-// Run after Android/Kotlin plugin configuration so no plugin default can
-// reset the compile targets to the IDE's JDK target.
-afterEvaluate {
-    tasks.withType<JavaCompile>().configureEach {
-        sourceCompatibility = "17"
-        targetCompatibility = "17"
-        options.release.set(17)
-    }
-    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-        kotlinOptions.jvmTarget = "17"
-    }
-}
 
 dependencies {
     implementation(platform("androidx.compose:compose-bom:2024.12.01"))
