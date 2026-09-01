@@ -16,18 +16,32 @@ android {
         versionName = "0.1.0"
     }
 
-    // Keep Java and Kotlin compiling to the same JVM bytecode target.
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
+    // Kotlin 2.x compiler API: explicitly pin Kotlin bytecode to JVM 17.
+    kotlin {
+        jvmToolchain(17)
     }
 
     buildFeatures {
         compose = true
+    }
+}
+
+// Enforce matching bytecode targets on every compile task, including tasks
+// created by Android/Compose plugins. This prevents IDE/JDK 22 defaults from
+// producing the 1.8-vs-22 validation failure.
+tasks.withType<JavaCompile>().configureEach {
+    sourceCompatibility = "17"
+    targetCompatibility = "17"
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 
