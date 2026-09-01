@@ -19,9 +19,10 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = false
     }
 
-    // Kotlin 2.x compiler API: explicitly pin Kotlin bytecode to JVM 17.
+    // Use JDK 17 for Kotlin compilation regardless of the JDK selected by Android Studio.
     kotlin {
         jvmToolchain(17)
     }
@@ -31,14 +32,15 @@ android {
     }
 }
 
-// Enforce matching bytecode targets on every compile task, including tasks
-// created by Android/Compose plugins. This prevents IDE/JDK 22 defaults from
-// producing the 1.8-vs-22 validation failure.
+// Explicitly force every Java compile task to emit JVM 17 bytecode.
+// options.release also prevents Gradle/JDK defaults from falling back to 1.8.
 tasks.withType<JavaCompile>().configureEach {
     sourceCompatibility = "17"
     targetCompatibility = "17"
+    options.release.set(17)
 }
 
+// Explicitly force every Kotlin compile task to emit JVM 17 bytecode.
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
