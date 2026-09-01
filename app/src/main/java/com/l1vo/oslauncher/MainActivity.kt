@@ -54,8 +54,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.toSize
 import androidx.core.graphics.drawable.toBitmap
 import java.io.File
 import java.io.FileOutputStream
@@ -66,7 +64,6 @@ private val L1voGreen = Color(0xFF3E6B34)
 private val L1voDeepGreen = Color(0xFF315A2A)
 private val L1voInk = Color(0xFF18241F)
 private val L1voPanel = Color(0xFFF4F4E9)
-private val L1voSoft = Color(0xFFE7EBD9)
 private val L1voDark = Color(0xFF101612)
 private const val PREFS = "l1vo_launcher"
 private const val WALLPAPER = "wallpaper"
@@ -121,7 +118,7 @@ private fun L1voLauncherApp() {
                 "hub" -> AppHub(apps, ink, { page = "home" }, { launchLeau(context) }, { page = "wallpaper" }, { launch(context, it.intent) }, { page = "l1vo" }, animations)
                 "l1vo" -> L1voHub(ink, { page = "hub" }, { page = "settings" }, { launchLeau(context) }, { page = "wallpaper" })
                 "settings" -> L1voSettings(prefs, dark, { dark = it; prefs.edit().putBoolean(DARK_THEME, it).apply() }, { prefs.edit().putString(FONT, it).apply(); refresh++ }, { page = "home" }, { page = "wallpaper" }, { editingSlot = it }, { launch(context, Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }, { launch(context, Intent(Settings.ACTION_HOME_SETTINGS)) })
-                "wallpaper" -> WallpaperStudio(ink, dark, wallpaper, { page = "home" }, { uri -> wallpaper = uri; prefs.edit().putString(WALLPAPER, uri).apply(); page = "home" })
+                "wallpaper" -> WallpaperStudio(ink, dark, { page = "home" }, { uri -> wallpaper = uri; prefs.edit().putString(WALLPAPER, uri).apply(); page = "home" })
                 else -> HomeScreen(slots, apps, ink, { page = "hub" }, { page = "settings" }, { launchLeau(context) }, { page = "wallpaper" }, { editingSlot = it }, animations)
             }
             editingSlot?.let { id -> SlotPicker(apps, { editingSlot = null }) { app -> saveSlot(context, id, app); editingSlot = null; refresh++ } }
@@ -256,14 +253,13 @@ private fun L1voLauncherApp() {
 
 @Composable private fun SlotPicker(apps: List<LaunchableApp>, onDismiss: () -> Unit, onSelect: (LaunchableApp) -> Unit) { AlertDialog(onDismissRequest = onDismiss, title = { Text("Choose an app") }, text = { Column(Modifier.height(420.dp).verticalScroll(rememberScrollState())) { apps.forEach { app -> Surface(onClick = { onSelect(app) }, color = Color.Transparent, modifier = Modifier.fillMaxWidth()) { Row(Modifier.padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) { Surface(shape = RoundedCornerShape(12.dp), color = Color.White, modifier = Modifier.size(42.dp)) { Image(app.icon.asImageBitmap(), null, Modifier.padding(6.dp), contentScale = ContentScale.Fit) }; Spacer(Modifier.width(14.dp)); Text(app.label, color = L1voInk) } } } } }, confirmButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }) }
 
-@Composable private fun WallpaperStudio(ink: Color, dark: Boolean, currentWallpaper: String?, onBack: () -> Unit, onSave: (String) -> Unit) {
+@Composable private fun WallpaperStudio(ink: Color, dark: Boolean, onBack: () -> Unit, onSave: (String) -> Unit) {
     val context = LocalContext.current
-    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { }
-    val permissions = remember { if (Build.VERSION.SDK_INT >= 34) arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED) else if (Build.VERSION.SDK_INT >= 33) arrayOf(Manifest.permission.READ_MEDIA_IMAGES) else arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE) }
     var granted by remember { mutableStateOf(hasMediaPermission(context)) }
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted = hasMediaPermission(context) }
+    val permissions = remember { if (Build.VERSION.SDK_INT >= 34) arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED) else if (Build.VERSION.SDK_INT >= 33) arrayOf(Manifest.permission.READ_MEDIA_IMAGES) else arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE) }
     var photos by remember { mutableStateOf(emptyList<LocalPhoto>()) }
     var selected by remember { mutableStateOf<Bitmap?>(null) }
-    var selectedUri by remember { mutableStateOf<Uri?>(null) }
     var zoom by remember { mutableFloatStateOf(1f) }
     var panX by remember { mutableFloatStateOf(0f) }
     var panY by remember { mutableFloatStateOf(0f) }
@@ -271,20 +267,20 @@ private fun L1voLauncherApp() {
     val targetAspect = configuration.screenWidthDp.toFloat() / configuration.screenHeightDp.toFloat()
     LaunchedEffect(granted) { if (granted) photos = loadDevicePhotos(context) }
     if (selected != null) {
-        WallpaperCropEditor(ink, dark, selected!!, targetAspect, zoom, panX, panY, { zoom = it }, { x, y -> panX = x; panY = y }, { selected = null; selectedUri = null }, { saveCroppedWallpaper(context, selected!!, targetAspect, zoom, panX, panY)?.let(onSave) })
+        WallpaperCropEditor(ink, dark, selected!!, targetAspect, zoom, panX, panY, { zoom = it }, { x, y -> panX = x; panY = y }, { selected = null }, { saveCroppedWallpaper(context, selected!!, targetAspect, zoom, panX, panY)?.let(onSave) })
         return
     }
     Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars).windowInsetsPadding(WindowInsets.navigationBars).padding(horizontal = 18.dp, vertical = 8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back", tint = ink) }; Column(Modifier.weight(1f)) { Text("Wallpaper", color = ink, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Light); Text("Wallpaper Studio", color = L1voGreen, style = MaterialTheme.typography.titleMedium) } }
         Spacer(Modifier.height(12.dp))
         if (!granted) {
-            Card(colors = CardDefaults.cardColors(containerColor = L1voPanel.copy(alpha = .96f)), shape = RoundedCornerShape(28.dp), modifier = Modifier.fillMaxWidth()) { Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) { Surface(shape = CircleShape, color = Color.White.copy(alpha = .8f), modifier = Modifier.size(72.dp)) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Collections, "Photos", tint = L1voDeepGreen, modifier = Modifier.size(36.dp)) } }; Spacer(Modifier.height(18.dp)); Text("Your photos", color = ink, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold); Spacer(Modifier.height(7.dp)); Text("Allow L1vo to access your media so you can choose a picture for your wallpaper.", color = ink.copy(alpha = .68f), style = MaterialTheme.typography.bodyMedium); Spacer(Modifier.height(18.dp)); Button(onClick = { permissionLauncher.launch(permissions); granted = hasMediaPermission(context) }, colors = ButtonDefaults.buttonColors(containerColor = L1voGreen)) { Text("Allow photo access") } } }
+            Card(colors = CardDefaults.cardColors(containerColor = L1voPanel.copy(alpha = .96f)), shape = RoundedCornerShape(28.dp), modifier = Modifier.fillMaxWidth()) { Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) { Surface(shape = CircleShape, color = Color.White.copy(alpha = .8f), modifier = Modifier.size(72.dp)) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Collections, "Photos", tint = L1voDeepGreen, modifier = Modifier.size(36.dp)) } }; Spacer(Modifier.height(18.dp)); Text("Your photos", color = ink, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold); Spacer(Modifier.height(7.dp)); Text("Allow L1vo to access your media so you can choose a picture for your wallpaper.", color = ink.copy(alpha = .68f), style = MaterialTheme.typography.bodyMedium); Spacer(Modifier.height(18.dp)); Button(onClick = { permissionLauncher.launch(permissions) }, colors = ButtonDefaults.buttonColors(containerColor = L1voGreen)) { Text("Allow photo access") } } }
         } else if (photos.isEmpty()) {
             Card(colors = CardDefaults.cardColors(containerColor = L1voPanel.copy(alpha = .96f)), shape = RoundedCornerShape(28.dp), modifier = Modifier.fillMaxWidth()) { Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) { Text("No photos found", color = ink, style = MaterialTheme.typography.titleLarge); Spacer(Modifier.height(8.dp)); Text("Photos available to L1vo will appear here.", color = ink.copy(alpha = .65f)); Spacer(Modifier.height(14.dp)); TextButton(onClick = { photos = loadDevicePhotos(context) }) { Text("Refresh") } } }
         } else {
             Text("Choose a photo", color = ink, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(10.dp))
-            LazyVerticalGrid(columns = GridCells.Fixed(3), contentPadding = PaddingValues(bottom = 20.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.weight(1f)) { items(photos, key = { it.uri.toString() }) { photo -> PhotoThumbnail(context, photo) { selectedUri = photo.uri; selected = loadFullBitmap(context, photo.uri); zoom = 1f; panX = 0f; panY = 0f } } }
+            LazyVerticalGrid(columns = GridCells.Fixed(3), contentPadding = PaddingValues(bottom = 20.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.weight(1f)) { items(photos, key = { it.uri.toString() }) { photo -> PhotoThumbnail(context, photo) { loadFullBitmap(context, photo.uri)?.let { selected = it; zoom = 1f; panX = 0f; panY = 0f } } } }
         }
     }
 }
@@ -310,7 +306,7 @@ private fun L1voLauncherApp() {
         Spacer(Modifier.height(16.dp))
         Text("Zoom", color = ink, fontWeight = FontWeight.SemiBold)
         Slider(value = zoom, onValueChange = onZoom, valueRange = 1f..4f, colors = SliderDefaults.colors(thumbColor = L1voGreen, activeTrackColor = L1voGreen))
-        Text("The image is saved as a fitted wallpaper so the launcher won't stretch it on the next load.", color = ink.copy(alpha = .62f), style = MaterialTheme.typography.bodySmall)
+        Text("L1vo saves the chosen crop at the phone's wallpaper aspect ratio, so it won't be stretched when shown again.", color = ink.copy(alpha = .62f), style = MaterialTheme.typography.bodySmall)
     }
 }
 
@@ -333,7 +329,7 @@ private fun loadFullBitmap(context: Context, uri: Uri): Bitmap? = runCatching { 
 
 private fun saveCroppedWallpaper(context: Context, source: Bitmap, targetAspect: Float, zoom: Float, panX: Float, panY: Float): String? {
     val sw = source.width.toFloat(); val sh = source.height.toFloat(); val sourceAspect = sw / sh
-    var baseW: Float; var baseH: Float
+    val baseW: Float; val baseH: Float
     if (sourceAspect > targetAspect) { baseH = sh; baseW = sh * targetAspect } else { baseW = sw; baseH = sw / targetAspect }
     val cropW = (baseW / zoom).coerceAtLeast(1f); val cropH = (baseH / zoom).coerceAtLeast(1f)
     val maxOffsetX = ((baseW - cropW) / 2f); val maxOffsetY = ((baseH - cropH) / 2f)
