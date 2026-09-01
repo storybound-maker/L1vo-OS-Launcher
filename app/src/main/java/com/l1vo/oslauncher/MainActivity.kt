@@ -159,45 +159,137 @@ private fun WallpaperBackground(value: String?) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun HomeScreen(slots: List<QuickSlot>, onHub: () -> Unit, onLeau: () -> Unit, onWallpaper: () -> Unit, onEdit: (String) -> Unit) {
+private fun HomeScreen(
+    slots: List<QuickSlot>,
+    onHub: () -> Unit,
+    onLeau: () -> Unit,
+    onWallpaper: () -> Unit,
+    onEdit: (String) -> Unit
+) {
     val context = LocalContext.current
     val time = remember { java.text.SimpleDateFormat("HH:mm", Locale.getDefault()) }
-    Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars).windowInsetsPadding(WindowInsets.navigationBars), horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), horizontalArrangement = Arrangement.End) {
-            Text(time.format(java.util.Date()), color = L1voInk, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
-        }
-        Spacer(Modifier.weight(1f))
-        Card(colors = CardDefaults.cardColors(containerColor = L1voPanel.copy(alpha = .94f)), shape = RoundedCornerShape(30.dp), elevation = CardDefaults.cardElevation(8.dp), modifier = Modifier.size(238.dp)) {
-            Column(Modifier.fillMaxSize()) {
-                Row(Modifier.weight(1f).fillMaxWidth()) {
-                    HomeTile(slots[0], Modifier.weight(1f), onEdit, context)
-                    HomeTile(slots[1], Modifier.weight(1f), onEdit, context)
-                }
-                Row(Modifier.weight(1f).fillMaxWidth()) {
-                    HomeTile(slots[2], Modifier.weight(1f), onEdit, context)
-                    HomeTile(slots[3], Modifier.weight(1f), onEdit, context)
+
+    Box(
+        Modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.statusBars)
+            .windowInsetsPadding(WindowInsets.navigationBars)
+    ) {
+        Column(
+            Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 18.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                Text(
+                    time.format(java.util.Date()),
+                    color = L1voInk,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+
+            Spacer(Modifier.weight(1f))
+
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = L1voPanel.copy(alpha = .90f)
+                ),
+                shape = RoundedCornerShape(34.dp),
+                elevation = CardDefaults.cardElevation(10.dp),
+                modifier = Modifier
+                    .size(250.dp)
+                    .padding(4.dp)
+            ) {
+                Column(Modifier.fillMaxSize()) {
+                    Row(
+                        Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                    ) {
+                        HomeTile(slots[0], Modifier.weight(1f), onEdit, context)
+                        HomeTile(slots[1], Modifier.weight(1f), onEdit, context)
+                    }
+                    Row(
+                        Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                    ) {
+                        HomeTile(slots[2], Modifier.weight(1f), onEdit, context)
+                        HomeTile(slots[3], Modifier.weight(1f), onEdit, context)
+                    }
                 }
             }
+
+            Spacer(Modifier.weight(1f))
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(18.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 26.dp)
+            ) {
+                ActionCircle(Icons.Outlined.Apps, "App Hub", onHub)
+                LeauButton(onLeau)
+                ActionCircle(Icons.Outlined.Wallpaper, "Wallpaper", onWallpaper)
+            }
         }
-        Spacer(Modifier.weight(1f))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            ActionCircle(Icons.Outlined.Apps, "App Hub", onHub)
-            ActionCircle(Icons.Outlined.Wallpaper, "Wallpaper", onWallpaper)
-            LeauButton(onLeau)
-        }
-        Spacer(Modifier.height(26.dp))
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun HomeTile(slot: QuickSlot, modifier: Modifier, onEdit: (String) -> Unit, context: Context) {
-    val icon = when (slot.kind) { SlotKind.HOME -> Icons.Outlined.Home; SlotKind.SETTINGS -> Icons.Outlined.Settings; SlotKind.GALLERY -> Icons.Outlined.Collections; SlotKind.CALLS -> Icons.Outlined.Call; SlotKind.APP -> Icons.Outlined.Apps }
-    Box(modifier.combinedClickable(onClick = { openSlot(context, slot) }, onLongClick = { if (slot.kind != SlotKind.HOME) onEdit(slot.id) }), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            Icon(icon, null, tint = L1voGreen, modifier = Modifier.size(38.dp))
-            Spacer(Modifier.height(5.dp))
-            Text(slot.label, color = L1voInk, style = MaterialTheme.typography.labelLarge)
+private fun HomeTile(
+    slot: QuickSlot,
+    modifier: Modifier,
+    onEdit: (String) -> Unit,
+    context: Context
+) {
+    val icon = when (slot.kind) {
+        SlotKind.HOME -> Icons.Outlined.Home
+        SlotKind.SETTINGS -> Icons.Outlined.Settings
+        SlotKind.GALLERY -> Icons.Outlined.Collections
+        SlotKind.CALLS -> Icons.Outlined.Call
+        SlotKind.APP -> Icons.Outlined.Apps
+    }
+
+    Box(
+        modifier.combinedClickable(
+            onClick = { openSlot(context, slot) },
+            onLongClick = {
+                if (slot.kind != SlotKind.HOME) onEdit(slot.id)
+            }
+        ),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = Color.White.copy(alpha = .32f),
+                modifier = Modifier.size(58.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        icon,
+                        contentDescription = slot.label,
+                        tint = L1voGreen,
+                        modifier = Modifier.size(30.dp)
+                    )
+                }
+            }
+            Spacer(Modifier.height(7.dp))
+            Text(
+                slot.label,
+                color = L1voInk,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }
