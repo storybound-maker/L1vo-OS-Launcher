@@ -28,4 +28,3 @@ import androidx.compose.ui.text.font.FontFamily
   };edit?.let{id->SlotPicker(apps,{edit=null}){saveSlot(c,id,it);edit=null;refresh++}}}
  }
 }
-}
