@@ -20,7 +20,8 @@ import androidx.compose.ui.text.font.FontFamily
  MaterialTheme(typography=MaterialTheme.typography.copy(bodyLarge=MaterialTheme.typography.bodyLarge.copy(fontFamily=font),bodyMedium=MaterialTheme.typography.bodyMedium.copy(fontFamily=font),titleMedium=MaterialTheme.typography.titleMedium.copy(fontFamily=font),headlineMedium=MaterialTheme.typography.headlineMedium.copy(fontFamily=font))){
   Surface(Modifier.fillMaxSize(),color=if(dark)L1voDark else L1voPanel){WallpaperBackground(wallpaper,dark);when(page){
    "dashboard"->HomeDashboard(apps,slots,ink,{page="cube"},{page="hub"},{launchLeau(c)},anim)
-   "hub"->AppHub(apps,ink,{page="cube"},{launchLeau(c)},{page="wallpaper"},{launch(c,it.intent)},{page="l1vo"})
+   "hub"->AppHub(apps,ink,{page="cube"},{launchLeau(c)},{page="wallpaper"},{launch(c,it.intent)},{page="l1vo"},{page="leacher"})
+   "leacher"->LeacherScreen(apps,ink){page="hub"}
    "l1vo"->L1voHub(ink,{page="hub"},{page="settings"},{launchLeau(c)},{page="wallpaper"})
    "settings"->L1voSettings(p,dark,{dark=it;p.edit().putBoolean(DARK_THEME,it).apply()},{p.edit().putString(FONT,it).apply();refresh++},{page="cube"},{page="wallpaper"},{edit=it},{launch(c,Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))},{launch(c,Intent(Settings.ACTION_HOME_SETTINGS))})
    "wallpaper"->WallpaperStudio(ink,{page="cube"}){u->wallpaper=u;p.edit().putString(WALLPAPER,u).apply();page="cube"}
