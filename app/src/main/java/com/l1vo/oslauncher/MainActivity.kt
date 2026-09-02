@@ -53,6 +53,7 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.Wallpaper
+import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -87,8 +88,6 @@ import androidx.core.graphics.drawable.toBitmap
 import java.util.Locale
 
 private val L1voGreen = Color(0xFF3E6B34)
-private val L1voInk = Color(0xFF1E2B27)
-private val L1voPanel = Color(0xFFF4F4E9)
 private const val PREFS = "l1vo_launcher"
 private const val WALLPAPER = "wallpaper"
 private const val DARK_THEME = "dark_theme"
@@ -166,9 +165,7 @@ private fun L1voLauncherApp() {
 private fun rememberWallpaper(context: Context, value: String?): WallpaperState {
     var bitmap by remember(value) { mutableStateOf<Bitmap?>(null) }
     LaunchedEffect(value) {
-        bitmap = value?.let { uriString ->
-            runCatching { context.contentResolver.openInputStream(Uri.parse(uriString))?.use { android.graphics.BitmapFactory.decodeStream(it) } }.getOrNull()
-        }
+        bitmap = value?.let { uriString -> runCatching { context.contentResolver.openInputStream(Uri.parse(uriString))?.use { android.graphics.BitmapFactory.decodeStream(it) } }.getOrNull() }
     }
     val tone = remember(bitmap) {
         bitmap?.let {
@@ -210,6 +207,7 @@ private fun HomeScreen(slots: List<QuickSlot>, onHub: () -> Unit, onLeau: () -> 
             Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 18.dp), horizontalArrangement = Arrangement.End) {
                 Text(time.format(java.util.Date()), color = MaterialTheme.colorScheme.onBackground, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             }
+            ConnectedWidgetRow(context)
             Spacer(Modifier.weight(1f))
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .90f)), shape = RoundedCornerShape(34.dp), elevation = CardDefaults.cardElevation(10.dp), modifier = Modifier.size(250.dp).padding(4.dp)) {
                 Column(Modifier.fillMaxSize()) {
@@ -229,6 +227,23 @@ private fun HomeScreen(slots: List<QuickSlot>, onHub: () -> Unit, onLeau: () -> 
 }
 
 @Composable
+private fun ConnectedWidgetRow(context: Context) {
+    val widgets = listOf(
+        Triple("Weather", Icons.Outlined.WbSunny) { openSystemCategory(context, Intent.CATEGORY_APP_WEATHER) },
+        Triple("Calendar", Icons.Outlined.CalendarMonth) { openSystemCategory(context, Intent.CATEGORY_APP_CALENDAR) },
+        Triple("Notes", Icons.Outlined.Note) { openSystemCategory(context, Intent.CATEGORY_APP_NOTES) },
+        Triple("Maps", Icons.Outlined.LocationOn) { openSystemCategory(context, Intent.CATEGORY_APP_MAPS) }
+    )
+    Row(Modifier.fillMaxWidth().padding(horizontal = 22.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+        widgets.forEach { (label, icon, action) ->
+            Surface(onClick = action, modifier = Modifier.weight(1f).height(62.dp), shape = RoundedCornerShape(22.dp), color = MaterialTheme.colorScheme.surface.copy(alpha = .80f), shadowElevation = 2.dp) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) { Icon(icon, label, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp)); Text(label, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold) }
+            }
+        }
+    }
+}
+
+@Composable
 private fun HomeTile(slot: QuickSlot, modifier: Modifier, context: Context) {
     val icon = when (slot.kind) {
         SlotKind.HOME -> Icons.Outlined.Home
@@ -239,9 +254,7 @@ private fun HomeTile(slot: QuickSlot, modifier: Modifier, context: Context) {
     }
     Box(modifier.clickable { openSlot(context, slot) }, contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.onSurface.copy(alpha = .10f), modifier = Modifier.size(58.dp)) {
-                Box(contentAlignment = Alignment.Center) { Icon(icon, slot.label, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(30.dp)) }
-            }
+            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.onSurface.copy(alpha = .10f), modifier = Modifier.size(58.dp)) { Box(contentAlignment = Alignment.Center) { Icon(icon, slot.label, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(30.dp)) } }
             Spacer(Modifier.height(7.dp))
             Text(slot.label, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
         }
@@ -250,16 +263,12 @@ private fun HomeTile(slot: QuickSlot, modifier: Modifier, context: Context) {
 
 @Composable
 private fun LeauButton(onClick: () -> Unit) {
-    Surface(onClick = onClick, modifier = Modifier.size(66.dp), shape = CircleShape, color = MaterialTheme.colorScheme.onSurface.copy(alpha = .96f), shadowElevation = 8.dp) {
-        Box(contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Eco, "Leau", tint = MaterialTheme.colorScheme.surface, modifier = Modifier.size(31.dp)) }
-    }
+    Surface(onClick = onClick, modifier = Modifier.size(66.dp), shape = CircleShape, color = MaterialTheme.colorScheme.onSurface.copy(alpha = .96f), shadowElevation = 8.dp) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Eco, "Leau", tint = MaterialTheme.colorScheme.surface, modifier = Modifier.size(31.dp)) } }
 }
 
 @Composable
 private fun ActionCircle(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
-    Surface(onClick = onClick, modifier = Modifier.size(48.dp), shape = CircleShape, color = MaterialTheme.colorScheme.surface.copy(alpha = .92f), shadowElevation = 3.dp) {
-        Box(contentAlignment = Alignment.Center) { Icon(icon, label, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp)) }
-    }
+    Surface(onClick = onClick, modifier = Modifier.size(48.dp), shape = CircleShape, color = MaterialTheme.colorScheme.surface.copy(alpha = .92f), shadowElevation = 3.dp) { Box(contentAlignment = Alignment.Center) { Icon(icon, label, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp)) } }
 }
 
 @Composable
@@ -272,10 +281,7 @@ private fun AppHub(apps: List<LaunchableApp>, onBack: () -> Unit, onSearch: () -
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 18.dp)) { Icon(Icons.Outlined.Search, "Search Hub", modifier = Modifier.size(22.dp)); Text("Search Hub", modifier = Modifier.padding(start = 10.dp), fontWeight = FontWeight.SemiBold) }
         }
         Spacer(Modifier.height(14.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            L1voAppsCube(Modifier.weight(1f), onInternal, onLeau)
-            SystemCube(system, Modifier.weight(1f), onOpen)
-        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) { L1voAppsCube(Modifier.weight(1f), onInternal, onLeau); SystemCube(system, Modifier.weight(1f), onOpen) }
         Spacer(Modifier.height(18.dp))
         SectionTitle("FAVORITES")
         AppGrid(favorites, onOpen, 196.dp)
@@ -283,9 +289,7 @@ private fun AppHub(apps: List<LaunchableApp>, onBack: () -> Unit, onSearch: () -
         SectionTitle("ALL APPS")
         AppGrid(apps, onOpen, (((apps.size + 3) / 4).coerceAtLeast(1) * 92).coerceAtMost(900).dp)
         Spacer(Modifier.height(18.dp))
-        Surface(onClick = onLeau, modifier = Modifier.align(Alignment.CenterHorizontally).size(58.dp), shape = CircleShape, color = MaterialTheme.colorScheme.onSurface, shadowElevation = 7.dp) {
-            Box(contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Eco, "Leau", tint = MaterialTheme.colorScheme.surface, modifier = Modifier.size(28.dp)) }
-        }
+        Surface(onClick = onLeau, modifier = Modifier.align(Alignment.CenterHorizontally).size(58.dp), shape = CircleShape, color = MaterialTheme.colorScheme.onSurface, shadowElevation = 7.dp) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Eco, "Leau", tint = MaterialTheme.colorScheme.surface, modifier = Modifier.size(28.dp)) } }
         Spacer(Modifier.height(18.dp))
     }
 }
@@ -404,9 +408,7 @@ private fun Leacher(context: Context, onBack: () -> Unit) {
         Spacer(Modifier.height(16.dp))
         OutlinedTextField(value = query, onValueChange = { query = it }, singleLine = true, leadingIcon = { Icon(Icons.Outlined.Search, null) }, placeholder = { Text("Search...") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(28.dp))
         Spacer(Modifier.height(14.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            links.forEach { (label, icon, action) -> Surface(onClick = action, shape = CircleShape, color = MaterialTheme.colorScheme.surface.copy(alpha = .92f), modifier = Modifier.size(52.dp), shadowElevation = 2.dp) { Box(contentAlignment = Alignment.Center) { Icon(icon, label, modifier = Modifier.size(24.dp)) } } }
-        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { links.forEach { (label, icon, action) -> Surface(onClick = action, shape = CircleShape, color = MaterialTheme.colorScheme.surface.copy(alpha = .92f), modifier = Modifier.size(52.dp), shadowElevation = 2.dp) { Box(contentAlignment = Alignment.Center) { Icon(icon, label, modifier = Modifier.size(24.dp)) } } } }
         Spacer(Modifier.height(18.dp))
         Text("Leacher search is coming soon.", style = MaterialTheme.typography.bodySmall)
     }
@@ -426,9 +428,7 @@ private fun BloomStore(onBack: () -> Unit) {
 @Composable
 private fun SlotPicker(apps: List<LaunchableApp>, onDismiss: () -> Unit, onSelect: (LaunchableApp) -> Unit) {
     AlertDialog(onDismissRequest = onDismiss, title = { Text("Choose an app") }, text = {
-        Column(Modifier.height(420.dp).verticalScroll(rememberScrollState())) {
-            apps.forEach { app -> Row(Modifier.fillMaxWidth().clickable { onSelect(app) }.padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) { Image(app.icon.asImageBitmap(), null, Modifier.size(42.dp)); Spacer(Modifier.width(14.dp)); Text(app.label, fontWeight = FontWeight.Medium) } }
-        }
+        Column(Modifier.height(420.dp).verticalScroll(rememberScrollState())) { apps.forEach { app -> Row(Modifier.fillMaxWidth().clickable { onSelect(app) }.padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) { Image(app.icon.asImageBitmap(), null, Modifier.size(42.dp)); Spacer(Modifier.width(14.dp)); Text(app.label, fontWeight = FontWeight.Medium) } } }
     }, confirmButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
 }
 
@@ -451,6 +451,11 @@ private fun openSlot(context: Context, slot: QuickSlot) {
 
 private fun openLauncherApp(context: Context, app: LaunchableApp) { recordUse(context, app.packageName); launch(context, app.intent) }
 private fun recordUse(context: Context, packageName: String) { val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE); prefs.edit().putInt("usage_$packageName", prefs.getInt("usage_$packageName", 0) + 1).apply() }
+
+private fun openSystemCategory(context: Context, category: String) {
+    val intent = Intent(Intent.ACTION_MAIN).addCategory(category)
+    runCatching { launch(context, intent) }.onFailure { android.widget.Toast.makeText(context, "No matching app is installed", android.widget.Toast.LENGTH_SHORT).show() }
+}
 
 private fun systemApps(apps: List<LaunchableApp>): List<LaunchableApp> {
     val preferred = listOf("com.android.settings", "com.android.dialer", "com.google.android.dialer", "com.android.camera2", "com.android.camera", "com.google.android.apps.messaging", "com.android.mms")
@@ -475,10 +480,7 @@ private fun loadApps(context: Context): List<LaunchableApp> {
 private fun launchLeau(context: Context) {
     val pm = context.packageManager
     val intent = Intent("com.liv.ol1viapa.OPEN_ASSISTANT").setPackage(LEAU_PACKAGE).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    runCatching { context.startActivity(intent) }.onFailure {
-        pm.getLaunchIntentForPackage(LEAU_PACKAGE)?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)?.let { context.startActivity(it) }
-            ?: android.widget.Toast.makeText(context, "Leau Assistant is not installed yet", android.widget.Toast.LENGTH_SHORT).show()
-    }
+    runCatching { context.startActivity(intent) }.onFailure { pm.getLaunchIntentForPackage(LEAU_PACKAGE)?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)?.let { context.startActivity(it) } ?: android.widget.Toast.makeText(context, "Leau Assistant is not installed yet", android.widget.Toast.LENGTH_SHORT).show() }
 }
 
 private fun launchContacts(context: Context) { runCatching { launch(context, Intent(Intent.ACTION_VIEW).apply { data = Uri.parse("content://contacts/people") }) }.onFailure { launch(context, Intent(Intent.ACTION_VIEW).apply { data = Uri.parse("content://contacts") }) } }
