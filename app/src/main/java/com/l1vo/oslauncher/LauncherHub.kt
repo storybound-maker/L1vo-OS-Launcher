@@ -54,7 +54,8 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
         }
         item(span = { GridItemSpan(maxLineSpan) }) { SearchHub(query, { query = it }, ink) }
         if (query.isBlank()) {
-            item(span = { GridItemSpan(maxLineSpan) }) { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) { L1voAppsPanel(Modifier.weight(1f), ink) { openL1vo(it) }; SystemAppsPanel(Modifier.weight(1f), ink, apps, onWallpaper) } }
+            item(span = { GridItemSpan(maxLineSpan) }) { L1voAppsPanel(Modifier.fillMaxWidth()) { openL1vo(it) } }
+            item(span = { GridItemSpan(maxLineSpan) }) { SystemAppsPanel(Modifier.fillMaxWidth(), apps, onWallpaper) }
             item(span = { GridItemSpan(maxLineSpan) }) { SectionHeading("FAVORITES", "Learns from the apps you use most", ink) }
             items(8) { index -> val app = favoriteApps.getOrNull(index); FavoriteSlot(app, ink) { if (app != null) openApp(app) } }
             item(span = { GridItemSpan(maxLineSpan) }) { SectionHeading("ALL APPS", "Every launchable app on this device", ink) }
@@ -69,7 +70,7 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
         Row(Modifier.fillMaxSize().padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.Search, "Search Hub", tint = L1voDeepGreen, modifier = Modifier.size(24.dp)); Spacer(Modifier.width(10.dp)); BasicTextField(value = query, onValueChange = onQueryChange, singleLine = true, textStyle = MaterialTheme.typography.bodyLarge.copy(color = L1voInk, fontWeight = FontWeight.Medium), modifier = Modifier.weight(1f), decorationBox = { inner -> if (query.isEmpty()) Text("SEARCH HUB", color = L1voInk.copy(alpha = .82f), fontWeight = FontWeight.SemiBold); inner() }); if (query.isNotEmpty()) IconButton(onClick = { onQueryChange("") }) { Icon(Icons.Outlined.Close, "Clear search", tint = L1voDeepGreen) } }
     }
 }
-@Composable private fun L1voAppsPanel(modifier: Modifier, ink: Color, onOpen: (String) -> Unit) {
+@Composable private fun L1voAppsPanel(modifier: Modifier, onOpen: (String) -> Unit) {
     val entries = listOf(
         Triple("STEM", Icons.Outlined.Spa, "STEM"),
         Triple("LEAU", Icons.Outlined.Eco, "LEAU"),
@@ -80,24 +81,19 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
         Triple("BLOOM STORE", Icons.Outlined.LocalFlorist, "BLOOM STORE")
     )
 
-    CategoryPanel(modifier, "L1VO APPS", ink, Icons.Outlined.Eco) {
-        entries.chunked(2).forEach { row ->
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                row.forEach { (label, icon, key) ->
-                    MiniApp(label, icon, ink, Modifier.weight(1f)) {
-                        onOpen(key)
-                    }
-                }
-                if (row.size == 1) Spacer(Modifier.weight(1f))
+    CategoryPanel(modifier, "L1VO APPS", Icons.Outlined.Eco) {
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(end = 2.dp)
+        ) {
+            items(entries, key = { it.third }) { (label, icon, key) ->
+                MiniApp(label, icon, Modifier.width(104.dp)) { onOpen(key) }
             }
         }
     }
 }
 
-@Composable private fun SystemAppsPanel(modifier: Modifier, ink: Color, apps: List<LaunchableApp>, onWallpaper: () -> Unit) {
+@Composable private fun SystemAppsPanel(modifier: Modifier, apps: List<LaunchableApp>, onWallpaper: () -> Unit) {
     val context = LocalContext.current
     val systemApps = remember(apps) {
         apps.filter {
@@ -129,31 +125,28 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
         add("WALLPAPER" to onWallpaper)
     }
 
-    CategoryPanel(modifier, "SYSTEM", ink, Icons.Outlined.Settings) {
-        entries.chunked(2).forEach { row ->
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                row.forEach { (label, action) ->
-                    val icon = when (label.uppercase()) {
-                        "SETTINGS" -> Icons.Outlined.Settings
-                        "PHONE" -> Icons.Outlined.Call
-                        "MESSAGES" -> Icons.Outlined.Message
-                        "CONTACTS" -> Icons.Outlined.Contacts
-                        "WALLPAPER" -> Icons.Outlined.Wallpaper
-                        else -> Icons.Outlined.Android
-                    }
-
-                    MiniApp(label, icon, ink, Modifier.weight(1f), action)
+    CategoryPanel(modifier, "SYSTEM", Icons.Outlined.Settings) {
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(end = 2.dp)
+        ) {
+            items(entries, key = { it.first }) { (label, action) ->
+                val icon = when (label.uppercase()) {
+                    "SETTINGS" -> Icons.Outlined.Settings
+                    "PHONE" -> Icons.Outlined.Call
+                    "MESSAGES" -> Icons.Outlined.Message
+                    "CONTACTS" -> Icons.Outlined.Contacts
+                    "WALLPAPER" -> Icons.Outlined.Wallpaper
+                    else -> Icons.Outlined.Android
                 }
-                if (row.size == 1) Spacer(Modifier.weight(1f))
+
+                MiniApp(label, icon, Modifier.width(104.dp), action)
             }
         }
     }
 }
 
-@Composable private fun CategoryPanel(modifier: Modifier, title: String, ink: Color, icon: ImageVector, content: @Composable ColumnScope.() -> Unit) {
+@Composable private fun CategoryPanel(modifier: Modifier, title: String, icon: ImageVector, content: @Composable ColumnScope.() -> Unit) {
     Surface(
         modifier = modifier,
         color = L1voPanel.copy(alpha = .96f),
@@ -174,7 +167,7 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
                 Spacer(Modifier.width(9.dp))
                 Text(
                     title,
-                    color = ink,
+                    color = L1voInk,
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleSmall
                 )
@@ -192,7 +185,6 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
 @Composable private fun MiniApp(
     label: String,
     icon: ImageVector,
-    ink: Color,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
@@ -219,7 +211,7 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
             Spacer(Modifier.height(5.dp))
             Text(
                 label,
-                color = ink,
+                color = L1voInk,
                 fontWeight = FontWeight.SemiBold,
                 style = MaterialTheme.typography.labelSmall,
                 maxLines = 2,
