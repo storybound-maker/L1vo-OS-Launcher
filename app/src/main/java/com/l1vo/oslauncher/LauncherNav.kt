@@ -16,11 +16,11 @@ import androidx.compose.ui.text.font.FontWeight
  val c=LocalContext.current; val p=remember{c.getSharedPreferences(PREFS,Context.MODE_PRIVATE)}
  var page by remember{mutableStateOf("cube")}; var wallpaperReturnPage by remember{mutableStateOf("cube")}; var edit by remember{mutableStateOf<String?>(null)}; var refresh by remember{mutableIntStateOf(0)}
  var wallpaper by remember{mutableStateOf(p.getString(WALLPAPER,null))}; var dark by remember{mutableStateOf(p.getBoolean(DARK_THEME,false))}
- val font=when(p.getString(FONT,"Sans")){"Serif"->FontFamily.Serif;"Mono"->FontFamily.Monospace;else->FontFamily.SansSerif}; val ink=rememberAdaptiveInk(wallpaper,dark)
+ val font=when(p.getString(FONT,"Sans")){"Serif"->FontFamily.Serif;"Mono"->FontFamily.Monospace;else->FontFamily.SansSerif}; val ink=rememberAdaptiveInk(wallpaper,dark); val homeInk=rememberHomeAdaptiveInk(wallpaper,dark)
  val apps=remember(refresh){loadApps(c)}; val slots=remember(refresh){loadSlots(c)}; val anim=p.getBoolean(ANIMATIONS,true)
  MaterialTheme(typography=MaterialTheme.typography.copy(bodyLarge=MaterialTheme.typography.bodyLarge.copy(fontFamily=font,fontWeight=FontWeight.Medium),bodyMedium=MaterialTheme.typography.bodyMedium.copy(fontFamily=font,fontWeight=FontWeight.Medium),labelLarge=MaterialTheme.typography.labelLarge.copy(fontFamily=font,fontWeight=FontWeight.Medium),labelMedium=MaterialTheme.typography.labelMedium.copy(fontFamily=font,fontWeight=FontWeight.SemiBold),labelSmall=MaterialTheme.typography.labelSmall.copy(fontFamily=font,fontWeight=FontWeight.SemiBold),titleMedium=MaterialTheme.typography.titleMedium.copy(fontFamily=font,fontWeight=FontWeight.SemiBold),headlineMedium=MaterialTheme.typography.headlineMedium.copy(fontFamily=font,fontWeight=FontWeight.SemiBold))){
   Surface(Modifier.fillMaxSize(),color=if(dark)L1voDark else L1voPanel){WallpaperBackground(wallpaper,dark);when(page){
-   "dashboard"->HomeDashboard(apps,slots,ink,{page="cube"},{page="hub"},{launchLeau(c)},anim)
+   "dashboard"->HomeDashboard(apps,slots,homeInk,{page="cube"},{page="hub"},{launchLeau(c)},anim)
    "hub"->AppHub(apps,ink,{page="cube"},{launchLeau(c)},{wallpaperReturnPage="hub";page="wallpaper"},{launch(c,it.intent)},{page="l1vo"},{page="leacher"},{page="settings"})
    "leacher"->LeacherScreen(apps,ink){page="hub"}
    "l1vo"->L1voHub(ink,{page="hub"},{page="settings"},{launchLeau(c)},{wallpaperReturnPage="l1vo";page="wallpaper"})
