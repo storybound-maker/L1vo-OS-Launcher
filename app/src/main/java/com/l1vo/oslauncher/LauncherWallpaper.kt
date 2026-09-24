@@ -42,6 +42,47 @@ import androidx.core.graphics.drawable.toBitmap
 private fun drawableToWallpaperBitmap(d:Drawable):Bitmap=d.toBitmap(1080,1920,Bitmap.Config.ARGB_8888)
 
 @Composable
+fun rememberHomeAdaptiveInk(value: String?, darkFallback: Boolean): Color {
+    val context = LocalContext.current
+    val fallback = if (darkFallback) Color(0xFFE9F0E9) else L1voInk
+    var ink by remember(value, darkFallback) { mutableStateOf(fallback) }
+    LaunchedEffect(value, darkFallback) {
+        val bitmap = runCatching {
+            if (value == null) {
+                android.app.WallpaperManager.getInstance(context).drawable?.let { drawableToWallpaperBitmap(it) }
+            } else {
+                context.contentResolver.openInputStream(Uri.parse(value))?.use { android.graphics.BitmapFactory.decodeStream(it) }
+            }
+        }.getOrNull()
+        ink = bitmap?.let {
+            val left = (it.width * 0.22f).toInt().coerceAtLeast(0)
+            val right = (it.width * 0.78f).toInt().coerceAtMost(it.width)
+            val bottom = (it.height * 0.42f).toInt().coerceAtMost(it.height)
+            val stepX = ((right - left) / 18).coerceAtLeast(1)
+            val stepY = (bottom / 12).coerceAtLeast(1)
+            var total = 0L
+            var count = 0
+            var y = 0
+            while (y < bottom) {
+                var x = left
+                while (x < right) {
+                    val p = it.getPixel(x, y)
+                    val r = (p shr 16) and 0xFF
+                    val g = (p shr 8) and 0xFF
+                    val b = p and 0xFF
+                    total += (0.2126 * r + 0.7152 * g + 0.0722 * b).toLong()
+                    count++
+                    x += stepX
+                }
+                y += stepY
+            }
+            if (count > 0 && total.toDouble() / count > 150.0) L1voDeepGreen else Color(0xFFF2F7F2)
+        } ?: fallback
+    }
+    return ink
+}
+
+@Composable
 fun rememberAdaptiveInk(value: String?, darkFallback: Boolean): Color {
     val context = LocalContext.current
     val fallback = if (darkFallback) Color(0xFFE9F0E9) else L1voInk
