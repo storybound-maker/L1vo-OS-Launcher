@@ -105,7 +105,12 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
             it.packageName.startsWith("com.google.android.")
         }.filterNot {
             it.packageName == context.packageName
-        }.take(4)
+        }.filterNot {
+            it.label.equals("Settings", true) ||
+            it.label.equals("Phone", true) ||
+            it.label.equals("Messages", true) ||
+            it.label.equals("Contacts", true)
+        }.sortedBy { it.label.lowercase() }
     }
 
     val entries = buildList<Pair<String, () -> Unit>> {
@@ -115,7 +120,7 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
         add("CONTACTS" to {
             launch(context, Intent(Intent.ACTION_VIEW, ContactsContract.Contacts.CONTENT_URI))
         })
-        systemApps.forEach { app ->
+        systemApps.take(4).forEach { app ->
             add(app.label to {
                 rememberAppUse(context, app.packageName)
                 launch(context, app.intent)
