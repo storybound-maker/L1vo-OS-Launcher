@@ -8,7 +8,6 @@ import android.widget.Toast
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.clip
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -231,7 +230,7 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
 
 @Composable private fun FavoriteSlot(app: LaunchableApp?, ink: Color, onClick: () -> Unit) { val icon = remember(app?.packageName) { app?.icon?.asImageBitmap() }; Surface(onClick = onClick, enabled = app != null, shape = RoundedCornerShape(18.dp), color = Color.White.copy(alpha = if (app != null) .90f else .52f), shadowElevation = if (app != null) 2.dp else 0.dp, modifier = Modifier.fillMaxWidth().height(86.dp)) { Column(Modifier.fillMaxSize().padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) { if (app != null) { icon?.let { Image(it, app.label, Modifier.size(38.dp), contentScale = ContentScale.Fit) }; Spacer(Modifier.height(5.dp)); Text(app.label, color = L1voInk, fontWeight = FontWeight.Medium, style = MaterialTheme.typography.labelSmall, maxLines = 1) } else { Icon(Icons.Outlined.Add, "Empty favorite", tint = ink.copy(alpha = .45f), modifier = Modifier.size(24.dp)); Spacer(Modifier.height(4.dp)); Text("EMPTY", color = L1voInk.copy(alpha = .55f), fontWeight = FontWeight.Medium, style = MaterialTheme.typography.labelSmall) } } } }
 
-@Composable private fun AppIcon(a: LaunchableApp, onOpen: (LaunchableApp) -> Unit, ink: Color) { val icon = remember(a.packageName) { a.icon.asImageBitmap() }; Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) { Box(Modifier.size(62.dp).clip(RoundedCornerShape(18.dp)).background(Color.White.copy(alpha = .90f)).clickable { onOpen(a) }, contentAlignment = Alignment.Center) { Image(icon, a.label, Modifier.padding(9.dp), contentScale = ContentScale.Fit) }; Spacer(Modifier.height(5.dp)); Text(a.label, color = Color.White, fontWeight = FontWeight.Medium, style = MaterialTheme.typography.labelMedium, maxLines = 1) } }
+@Composable private fun AppIcon(a: LaunchableApp, onOpen: (LaunchableApp) -> Unit, ink: Color) { val icon = remember(a.packageName) { a.icon.asImageBitmap() }; Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) { Box(Modifier.size(62.dp).background(Color.White.copy(alpha = .90f)).clickable { onOpen(a) }, contentAlignment = Alignment.Center) { Image(icon, a.label, Modifier.padding(9.dp), contentScale = ContentScale.Fit) }; Spacer(Modifier.height(5.dp)); Text(a.label, color = Color.White, fontWeight = FontWeight.Medium, style = MaterialTheme.typography.labelMedium, maxLines = 1) } }
 
 @Composable fun LeacherScreen(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit) {
     val context = LocalContext.current
