@@ -48,7 +48,7 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
             else -> apps.firstOrNull { it.label.equals(label, true) }?.let(::openApp) ?: Toast.makeText(context, "$label is not installed yet", Toast.LENGTH_SHORT).show()
         }
     }
-    LazyVerticalGrid(columns = GridCells.Fixed(4), modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 16.dp, bottom = 18.dp), verticalArrangement = Arrangement.spacedBy(14.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+    LazyVerticalGrid(columns = GridCells.Fixed(4), modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 16.dp + WindowInsets.statusBars.asPaddingValues().calculateTopPadding(), bottom = 18.dp), verticalArrangement = Arrangement.spacedBy(14.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         item(span = { GridItemSpan(maxLineSpan) }) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack, modifier = Modifier.offset(y = 8.dp).size(56.dp)) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back", tint = ink) }
@@ -235,7 +235,7 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
 @Composable fun LeacherScreen(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit) {
     val context = LocalContext.current
     val browserCandidates = listOf("Google Chrome", "Chrome", "Opera", "Brave")
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 18.dp)) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 18.dp + WindowInsets.statusBars.asPaddingValues().calculateTopPadding(), bottom = 18.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) { IconButton(onClick = onBack, modifier = Modifier.offset(y = 8.dp).size(56.dp)) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back", tint = ink) }; Column(Modifier.weight(1f)) { Text("LEACHER", color = ink, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold); Text("Browser bridge", color = L1voGreen, fontWeight = FontWeight.Medium) }; Icon(Icons.Outlined.Search, "Leacher", tint = L1voGreen) }
         Spacer(Modifier.height(22.dp))
         Surface(shape = RoundedCornerShape(50), color = Color.White.copy(alpha = .92f), shadowElevation = 4.dp, modifier = Modifier.fillMaxWidth().height(56.dp)) { Row(Modifier.fillMaxSize().padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.Search, "Search", tint = L1voDeepGreen, modifier = Modifier.size(23.dp)); Spacer(Modifier.width(10.dp)); Text("Search...", color = ink.copy(alpha = .68f), fontWeight = FontWeight.Medium) } }
