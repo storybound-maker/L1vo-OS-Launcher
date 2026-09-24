@@ -5,7 +5,7 @@ import android.content.Intent
 import android.provider.ContactsContract
 import android.provider.Settings
 import android.widget.Toast
-import androidx.compose.foundation.BasicTextField
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
@@ -29,7 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: () -> Unit, onWallpaper: () -> Unit, onOpen: (LaunchableApp) -> Unit, onL1vo: () -> Unit, onLeacher: () -> Unit) {
+fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: () -> Unit, onWallpaper: () -> Unit, onOpen: (LaunchableApp) -> Unit, onL1vo: () -> Unit, onLeacher: () -> Unit, onStem: () -> Unit) {
     val context = LocalContext.current
     var query by rememberSaveable { mutableStateOf("") }
     var favoriteApps by remember(apps) { mutableStateOf(loadFavoriteApps(context, apps)) }
@@ -37,6 +37,7 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
     fun openApp(app: LaunchableApp) { rememberAppUse(context, app.packageName); favoriteApps = loadFavoriteApps(context, apps); onOpen(app) }
     fun openL1vo(label: String) {
         when (label) {
+            "STEM" -> onStem()
             "LEAU" -> onLeau(); "LEACHER" -> onLeacher()
             "GALLERY" -> launch(context, Intent(Intent.ACTION_VIEW).apply { type = "image/*" })
             "PHONE" -> launch(context, Intent(Intent.ACTION_DIAL))
@@ -46,7 +47,7 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
     LazyVerticalGrid(columns = GridCells.Fixed(4), modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 16.dp, bottom = 18.dp), verticalArrangement = Arrangement.spacedBy(14.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         item(span = { GridItemSpan(maxLineSpan) }) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBack, modifier = Modifier.offset(y = 6.dp)) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back", tint = ink) }
+                IconButton(onClick = onBack, modifier = Modifier.offset(y = 8.dp).size(56.dp)) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back", tint = ink) }
                 Column(Modifier.weight(1f)) { Text("APP HUB", color = ink, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold); Text("L1vo application space", color = L1voGreen, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium) }
                 IconButton(onClick = onWallpaper) { Icon(Icons.Outlined.Wallpaper, "Wallpaper", tint = L1voGreen) }
             }
@@ -68,30 +69,161 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
         Row(Modifier.fillMaxSize().padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.Search, "Search Hub", tint = L1voDeepGreen, modifier = Modifier.size(24.dp)); Spacer(Modifier.width(10.dp)); BasicTextField(value = query, onValueChange = onQueryChange, singleLine = true, textStyle = MaterialTheme.typography.bodyLarge.copy(color = ink, fontWeight = FontWeight.Medium), modifier = Modifier.weight(1f), decorationBox = { inner -> if (query.isEmpty()) Text("SEARCH HUB", color = ink.copy(alpha = .82f), fontWeight = FontWeight.SemiBold); inner() }); if (query.isNotEmpty()) IconButton(onClick = { onQueryChange("") }) { Icon(Icons.Outlined.Close, "Clear search", tint = L1voDeepGreen) } }
     }
 }
-
 @Composable private fun L1voAppsPanel(modifier: Modifier, ink: Color, onOpen: (String) -> Unit) {
-    val entries = listOf(Triple("STEM", Icons.Outlined.Spa, "STEM"), Triple("LEAU", Icons.Outlined.Eco, "LEAU"), Triple("LIBRARY", Icons.Outlined.MenuBook, "LIBRARY"), Triple("GALLERY", Icons.Outlined.Collections, "GALLERY"), Triple("PHONE", Icons.Outlined.Call, "PHONE"), Triple("LEACHER", Icons.Outlined.Search, "LEACHER"), Triple("BLOOM STORE", Icons.Outlined.LocalFlorist, "BLOOM STORE"))
-    CategoryPanel(modifier, "L1VO APPS", ink, Icons.Outlined.Eco) { entries.forEach { (label, icon, key) -> MiniApp(label, icon, ink) { onOpen(key) } } }
+    val entries = listOf(
+        Triple("STEM", Icons.Outlined.Spa, "STEM"),
+        Triple("LEAU", Icons.Outlined.Eco, "LEAU"),
+        Triple("LIBRARY", Icons.Outlined.MenuBook, "LIBRARY"),
+        Triple("GALLERY", Icons.Outlined.Collections, "GALLERY"),
+        Triple("PHONE", Icons.Outlined.Call, "PHONE"),
+        Triple("LEACHER", Icons.Outlined.Search, "LEACHER"),
+        Triple("BLOOM STORE", Icons.Outlined.LocalFlorist, "BLOOM STORE")
+    )
+
+    CategoryPanel(modifier, "L1VO APPS", ink, Icons.Outlined.Eco) {
+        entries.chunked(2).forEach { row ->
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                row.forEach { (label, icon, key) ->
+                    MiniApp(label, icon, ink, Modifier.weight(1f)) {
+                        onOpen(key)
+                    }
+                }
+                if (row.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
 }
 
 @Composable private fun SystemAppsPanel(modifier: Modifier, ink: Color, apps: List<LaunchableApp>, onWallpaper: () -> Unit) {
     val context = LocalContext.current
-    val systemApps = remember(apps) { apps.filter { it.packageName.startsWith("com.android.") || it.packageName.startsWith("com.google.android.") }.filterNot { it.packageName == context.packageName }.take(4) }
+    val systemApps = remember(apps) {
+        apps.filter {
+            it.packageName.startsWith("com.android.") ||
+            it.packageName.startsWith("com.google.android.")
+        }.filterNot {
+            it.packageName == context.packageName
+        }.take(4)
+    }
+
+    val entries = buildList<Pair<String, () -> Unit>> {
+        add("SETTINGS" to { launch(context, Intent(Settings.ACTION_SETTINGS)) })
+        add("PHONE" to { launch(context, Intent(Intent.ACTION_DIAL)) })
+        add("MESSAGES" to { launchMessages(context) })
+        add("CONTACTS" to {
+            launch(context, Intent(Intent.ACTION_VIEW, ContactsContract.Contacts.CONTENT_URI))
+        })
+        systemApps.forEach { app ->
+            add(app.label to {
+                rememberAppUse(context, app.packageName)
+                launch(context, app.intent)
+            })
+        }
+        add("WALLPAPER" to onWallpaper)
+    }
+
     CategoryPanel(modifier, "SYSTEM", ink, Icons.Outlined.Settings) {
-        MiniApp("SETTINGS", Icons.Outlined.Settings, ink) { launch(context, Intent(Settings.ACTION_SETTINGS)) }
-        MiniApp("PHONE", Icons.Outlined.Call, ink) { launch(context, Intent(Intent.ACTION_DIAL)) }
-        MiniApp("MESSAGES", Icons.Outlined.Message, ink) { launchMessages(context) }
-        MiniApp("CONTACTS", Icons.Outlined.Contacts, ink) { launch(context, Intent(Intent.ACTION_VIEW, ContactsContract.Contacts.CONTENT_URI)) }
-        systemApps.forEach { app -> MiniApp(app.label, Icons.Outlined.Android, ink) { rememberAppUse(context, app.packageName); launch(context, app.intent) } }
-        MiniApp("WALLPAPER", Icons.Outlined.Wallpaper, ink, onWallpaper)
+        entries.chunked(2).forEach { row ->
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                row.forEach { (label, action) ->
+                    val icon = when (label.uppercase()) {
+                        "SETTINGS" -> Icons.Outlined.Settings
+                        "PHONE" -> Icons.Outlined.Call
+                        "MESSAGES" -> Icons.Outlined.Message
+                        "CONTACTS" -> Icons.Outlined.Contacts
+                        "WALLPAPER" -> Icons.Outlined.Wallpaper
+                        else -> Icons.Outlined.Android
+                    }
+
+                    MiniApp(label, icon, ink, Modifier.weight(1f), action)
+                }
+                if (row.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
     }
 }
 
 @Composable private fun CategoryPanel(modifier: Modifier, title: String, ink: Color, icon: ImageVector, content: @Composable ColumnScope.() -> Unit) {
-    Surface(modifier = modifier, color = L1voPanel.copy(alpha = .96f), shape = RoundedCornerShape(26.dp), shadowElevation = 5.dp) { Column(Modifier.padding(14.dp)) { Row(verticalAlignment = Alignment.CenterVertically) { Surface(shape = RoundedCornerShape(14.dp), color = L1voGreen.copy(alpha = .13f), modifier = Modifier.size(36.dp)) { Box(contentAlignment = Alignment.Center) { Icon(icon, title, tint = L1voDeepGreen, modifier = Modifier.size(20.dp)) } }; Spacer(Modifier.width(9.dp)); Text(title, color = ink, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall) }; Spacer(Modifier.height(10.dp)); Column(verticalArrangement = Arrangement.spacedBy(8.dp), content = content) } }
+    Surface(
+        modifier = modifier,
+        color = L1voPanel.copy(alpha = .96f),
+        shape = RoundedCornerShape(26.dp),
+        shadowElevation = 5.dp
+    ) {
+        Column(Modifier.padding(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = L1voGreen.copy(alpha = .13f),
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(icon, title, tint = L1voDeepGreen, modifier = Modifier.size(20.dp))
+                    }
+                }
+                Spacer(Modifier.width(9.dp))
+                Text(
+                    title,
+                    color = ink,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleSmall
+                )
+            }
+
+            Spacer(Modifier.height(10.dp))
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                content = content
+            )
+        }
+    }
 }
 
-@Composable private fun MiniApp(label: String, icon: ImageVector, ink: Color, onClick: () -> Unit) { Surface(onClick = onClick, color = Color.White.copy(alpha = .76f), shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth().height(48.dp)) { Row(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalAlignment = Alignment.CenterVertically) { Icon(icon, label, tint = L1voDeepGreen, modifier = Modifier.size(20.dp)); Spacer(Modifier.width(9.dp)); Text(label, color = ink, fontWeight = FontWeight.Medium, style = MaterialTheme.typography.labelMedium, maxLines = 1) } } }
+@Composable private fun MiniApp(
+    label: String,
+    icon: ImageVector,
+    ink: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        color = Color.White.copy(alpha = .90f),
+        shape = RoundedCornerShape(18.dp),
+        shadowElevation = 2.dp,
+        modifier = modifier.height(78.dp)
+    ) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(7.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                icon,
+                label,
+                tint = L1voDeepGreen,
+                modifier = Modifier.size(27.dp)
+            )
+            Spacer(Modifier.height(5.dp))
+            Text(
+                label,
+                color = ink,
+                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 2,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+        }
+    }
+}
+
 
 @Composable private fun SectionHeading(title: String, subtitle: String, ink: Color) { Column(Modifier.fillMaxWidth().padding(top = 2.dp)) { Text(title, color = ink, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium); Text(subtitle, color = ink.copy(alpha = .80f), fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodySmall) } }
 
@@ -103,7 +235,7 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
     val context = LocalContext.current
     val browserCandidates = listOf("Google Chrome", "Chrome", "Opera", "Brave")
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 18.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) { IconButton(onClick = onBack, modifier = Modifier.offset(y = 6.dp)) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back", tint = ink) }; Column(Modifier.weight(1f)) { Text("LEACHER", color = ink, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold); Text("Browser bridge", color = L1voGreen, fontWeight = FontWeight.Medium) }; Icon(Icons.Outlined.Search, "Leacher", tint = L1voGreen) }
+        Row(verticalAlignment = Alignment.CenterVertically) { IconButton(onClick = onBack, modifier = Modifier.offset(y = 8.dp).size(56.dp)) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back", tint = ink) }; Column(Modifier.weight(1f)) { Text("LEACHER", color = ink, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold); Text("Browser bridge", color = L1voGreen, fontWeight = FontWeight.Medium) }; Icon(Icons.Outlined.Search, "Leacher", tint = L1voGreen) }
         Spacer(Modifier.height(22.dp))
         Surface(shape = RoundedCornerShape(50), color = Color.White.copy(alpha = .92f), shadowElevation = 4.dp, modifier = Modifier.fillMaxWidth().height(56.dp)) { Row(Modifier.fillMaxSize().padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.Search, "Search", tint = L1voDeepGreen, modifier = Modifier.size(23.dp)); Spacer(Modifier.width(10.dp)); Text("Search...", color = ink.copy(alpha = .68f), fontWeight = FontWeight.Medium) } }
         Spacer(Modifier.height(20.dp))
@@ -121,7 +253,7 @@ private fun loadFavoriteApps(context: Context, apps: List<LaunchableApp>): List<
 @Composable fun L1voHub(ink: Color, onBack: () -> Unit, onSettings: () -> Unit, onLeau: () -> Unit, onWallpaper: () -> Unit) {
     val context = LocalContext.current
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 18.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) { IconButton(onClick = onBack, modifier = Modifier.offset(y = 6.dp)) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back", tint = ink) }; Column(Modifier.weight(1f)) { Text("L1VO", style = MaterialTheme.typography.headlineMedium, color = ink, fontWeight = FontWeight.SemiBold); Text("L1vo apps & features", color = L1voGreen, fontWeight = FontWeight.Medium) }; IconButton(onClick = onWallpaper) { Icon(Icons.Outlined.Wallpaper, "Wallpaper", tint = L1voGreen) } }
+        Row(verticalAlignment = Alignment.CenterVertically) { IconButton(onClick = onBack, modifier = Modifier.offset(y = 8.dp).size(56.dp)) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back", tint = ink) }; Column(Modifier.weight(1f)) { Text("L1VO", style = MaterialTheme.typography.headlineMedium, color = ink, fontWeight = FontWeight.SemiBold); Text("L1vo apps & features", color = L1voGreen, fontWeight = FontWeight.Medium) }; IconButton(onClick = onWallpaper) { Icon(Icons.Outlined.Wallpaper, "Wallpaper", tint = L1voGreen) } }
         Spacer(Modifier.height(18.dp)); Feature("L1vo Settings", "Native launcher settings", Icons.Outlined.Settings, ink, onSettings); Feature("Leau", "L1vo assistant", Icons.Outlined.Eco, ink, onLeau); Feature("L1vo Gallery", "Media space", Icons.Outlined.Collections, ink) { launch(context, Intent(Intent.ACTION_VIEW).apply { type = "image/*" }) }; Feature("L1vo Phone & Contacts", "Calls and contacts", Icons.Outlined.Call, ink) { launch(context, Intent(Intent.ACTION_DIAL)) }
     }
 }
