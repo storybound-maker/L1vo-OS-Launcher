@@ -49,7 +49,7 @@ import androidx.compose.ui.unit.sp
     val highlightShape=p.getString(HIGHLIGHT_SHAPE,"round")?:"round"
     val highlightSize=p.getFloat(HIGHLIGHT_SIZE,1f)
     MaterialTheme(
-        colorScheme=if(dark) darkColorScheme(primary=L1voGreen,onPrimary=Color.White,secondary=L1voGreen,onSecondary=Color.White,background=L1voDark,surface=Color(0xFF18201B),onBackground=Color(0xFFE9F0E9),onSurface=Color(0xFFE9F0E9),surfaceVariant=Color(0xFF263129),onSurfaceVariant=Color(0xFFC7D2C9))
+        colorScheme=if(dark) darkColorScheme(primary=L1voGreen,onPrimary=Color.White,secondary=L1voGreen,onSecondary=Color.White,background=L1voDark,surface=Color(0xFF18201B),onBackground=ink,onSurface=ink,surfaceVariant=Color(0xFF263129),onSurfaceVariant=Color(0xFFC7D2C9))
         else lightColorScheme(primary=L1voDeepGreen,onPrimary=Color.White,secondary=L1voGreen,onSecondary=Color.White,background=L1voPanel,surface=L1voPanel,onBackground=ink,onSurface=ink,surfaceVariant=Color(0xFFE7E9DF),onSurfaceVariant=L1voInk),
         typography=MaterialTheme.typography.copy(
             bodyLarge=MaterialTheme.typography.bodyLarge.copy(fontFamily=font,fontWeight=FontWeight.Medium,fontSize=MaterialTheme.typography.bodyLarge.fontSize*fontScale),
@@ -66,7 +66,7 @@ import androidx.compose.ui.unit.sp
                 "hub"->AppHub(apps,ink,{page="cube"},{launchLeau(c)},{wallpaperReturnPage="hub";page="wallpaper"},{launch(c,it.intent);page="dashboard"},{page="l1vo"},{page="leacher"},{page="settings"},columns,hspace,vspace,appSize,highlightShape,highlightSize)
                 "leacher"->LeacherScreen(apps,ink){page="hub"}
                 "l1vo"->L1voHub(ink,{page="hub"},{page="settings"},{launchLeau(c)},{wallpaperReturnPage="l1vo";page="wallpaper"})
-                "settings"->L1voSettings(p,dark,{dark=it;p.edit().putBoolean(DARK_THEME,it).apply()},{p.edit().putString(FONT,it).apply();refresh++},{page="cube"},{wallpaperReturnPage="settings";page="wallpaper"},{edit=it},{launch(c,Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))},{launch(c,Intent(Settings.ACTION_HOME_SETTINGS))})
+                "settings"->L1voSettings(p,dark,{dark=it;p.edit().putBoolean(DARK_THEME,it).apply()},{p.edit().putString(FONT,it).apply();refresh++},{page="cube"},{wallpaperReturnPage="settings";page="wallpaper"},{edit=it},{launch(c,Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))},{launch(c,Intent(Settings.ACTION_HOME_SETTINGS))},{refresh++})
                 "wallpaper"->WallpaperStudio(
                     ink,{page=wallpaperReturnPage},
                     {target,u->saveWallpaperTarget(p,target,u);wallpaper=u;refreshWall++;page=wallpaperReturnPage},
