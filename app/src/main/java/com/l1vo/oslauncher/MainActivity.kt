@@ -18,12 +18,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         widgetHost = AppWidgetHost(this, widgetHostId)
         window.setBackgroundDrawable(ColorDrawable(AndroidColor.rgb(16,22,18)))
-        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER)
         window.setWindowAnimations(0)
         window.setStatusBarColor(AndroidColor.TRANSPARENT)
         window.setNavigationBarColor(AndroidColor.TRANSPARENT)
         setContent { L1voLauncherApp() }
-        window.decorView.post { window.setBackgroundDrawable(ColorDrawable(AndroidColor.TRANSPARENT)) }
     }
 
     fun pickHomeWidget() {
