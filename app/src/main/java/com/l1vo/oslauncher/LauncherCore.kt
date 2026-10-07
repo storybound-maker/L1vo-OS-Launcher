@@ -99,3 +99,4 @@ fun loadApps(c:Context):List<LaunchableApp>{val pm=c.packageManager;val q=Intent
 fun appLabel(c:Context,pkg:String)=runCatching{c.packageManager.getApplicationLabel(c.packageManager.getApplicationInfo(pkg,0)).toString()}.getOrDefault("App")
 fun drawableToBitmap(d:Drawable,size:Int=64)=d.toBitmap(size,size,Bitmap.Config.ARGB_8888)
 
+}
