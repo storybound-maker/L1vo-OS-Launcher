@@ -97,7 +97,7 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
             contentPadding = PaddingValues(end = 2.dp)
         ) {
             items(entries, key = { it.third }) { (label, icon, key) ->
-                MiniApp(label, icon, Modifier.width(104.dp)) { onOpen(key) }
+                MiniApp(label, icon, Modifier.width(104.dp), onClick = { onOpen(key) })
             }
         }
     }
@@ -117,7 +117,7 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
         LazyRow(horizontalArrangement=Arrangement.spacedBy(8.dp),contentPadding=PaddingValues(end=2.dp)){
             items(builtIns,key={it.first}){(label,intent)->MiniApp(label,Icons.Outlined.Android,Modifier.width(104.dp),{launch(context,intent)},resolveIntentIcon(context,intent))}
             items(systemApps.take(8),key={it.packageName}){app->MiniApp(app.label,Icons.Outlined.Android,Modifier.width(104.dp),{rememberAppUse(context,app.packageName);launch(context,app.intent)},app.icon)}
-            item{MiniApp("WALLPAPER",Icons.Outlined.Wallpaper,Modifier.width(104.dp),onWallpaper)}
+            item{MiniApp("WALLPAPER",Icons.Outlined.Wallpaper,Modifier.width(104.dp),onClick = onWallpaper)}
         }
     }
 }
@@ -204,4 +204,4 @@ private fun loadFavoriteApps(context: Context, apps: List<LaunchableApp>): List<
 
 @Composable private fun Feature(t: String, s: String, i: ImageVector, ink: Color, onClick: () -> Unit) { Surface(onClick = onClick, color = MaterialTheme.colorScheme.surface.copy(alpha = .96f), shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) { Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) { Icon(i, t, tint = L1voDeepGreen, modifier = Modifier.size(28.dp)); Spacer(Modifier.width(15.dp)); Column { Text(t, color = ink, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge); Text(s, color = ink.copy(alpha = .78f), fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodySmall) } } } }
 
-@Composable private fun highlightShapeValue(value:String):androidx.compose.ui.graphics.Shape=when(value){"square"->RoundedCornerShape(2.dp);"diamond"->GenericShape{size,path->path.moveTo(size.width/2f,0f);path.lineTo(size.width,size.height/2f);path.lineTo(size.width/2f,size.height);path.lineTo(0f,size.height/2f);path.close()};"none"->RoundedCornerShape(0.dp);else->RoundedCornerShape(18.dp)}
+@Composable private fun highlightShapeValue(value:String):androidx.compose.ui.graphics.Shape=when(value){"square"->RoundedCornerShape(2.dp);"diamond"->GenericShape{size: androidx.compose.ui.geometry.Size, path: androidx.compose.ui.graphics.Path ->path.moveTo(size.width/2f,0f);path.lineTo(size.width,size.height/2f);path.lineTo(size.width/2f,size.height);path.lineTo(0f,size.height/2f);path.close()};"none"->RoundedCornerShape(0.dp);else->RoundedCornerShape(18.dp)}
