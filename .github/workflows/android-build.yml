@@ -1,7 +1,7 @@
 name: Android Build
 on:
   push:
-    branches: ["feature/l1vo-settings-foundation"]
+    branches: ["main", "feature/l1vo-settings-foundation", "feature/l1vo-wallpaper-live-playlist-fixes"]
   pull_request:
     branches: ["feature/l1vo-settings-foundation"]
 jobs:
