@@ -45,9 +45,16 @@ fun WallpaperBackground(value: String?, dark: Boolean, playlist: List<String> = 
     }
     Box(Modifier.fillMaxSize().background(if (useSystemWallpaper) Color.Transparent else if (dark) L1voDark else Color(0xFFE9E8D9))) {
         if (!useSystemWallpaper) {
-            val bitmap = activeUri?.let { uri ->
-                remember(uri) { runCatching { context.contentResolver.openInputStream(Uri.parse(uri))?.use { android.graphics.BitmapFactory.decodeStream(it) } }.getOrNull() }
-            } ?: systemFallback
+            var bitmap by remember(activeUri) { mutableStateOf<Bitmap?>(null) }
+            LaunchedEffect(activeUri) {
+                bitmap = activeUri?.let { uri ->
+                    runCatching {
+                        context.contentResolver.openInputStream(Uri.parse(uri))?.use {
+                            android.graphics.BitmapFactory.decodeStream(it)
+                        }
+                    }.getOrNull()
+                } ?: systemFallback
+            }
             bitmap?.let { Image(it.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) }
         }
         Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = if (dark) .12f else .04f)))
