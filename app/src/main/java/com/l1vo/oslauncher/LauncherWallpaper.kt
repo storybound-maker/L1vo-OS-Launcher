@@ -86,13 +86,13 @@ fun WallpaperStudio(
         }}
         Spacer(Modifier.height(12.dp))
         Card(colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface.copy(alpha=.96f)),shape=RoundedCornerShape(26.dp),modifier=Modifier.fillMaxWidth()){Column(Modifier.padding(20.dp)){
-            Row(verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text("Playlist file",color=ink,style=MaterialTheme.typography.titleMedium);Text(if(items.isEmpty())"No playlist selected" else "§{items.size} items",color=ink.copy(alpha=.62f),style=MaterialTheme.typography.bodySmall)};Icon(Icons.Outlined.FolderOpen,"Playlist",tint=L1voGreen)}
+            Row(verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text("Playlist file",color=ink,style=MaterialTheme.typography.titleMedium);Text(if(items.isEmpty())"No playlist selected" else "${items.size} items",color=ink.copy(alpha=.62f),style=MaterialTheme.typography.bodySmall)};Icon(Icons.Outlined.FolderOpen,"Playlist",tint=L1voGreen)}
             Spacer(Modifier.height(10.dp))
-            items.forEachIndexed{index,uri->Row(Modifier.fillMaxWidth().padding(vertical=4.dp),verticalAlignment=Alignment.CenterVertically){Surface(shape=CircleShape,color=L1voGreen.copy(alpha=.12f),modifier=Modifier.size(30.dp)){Box(contentAlignment=Alignment.Center){Text("§{index+1}",color=L1voDeepGreen,style=MaterialTheme.typography.labelSmall)}};Spacer(Modifier.width(9.dp));Text(Uri.parse(uri).lastPathSegment?:"Wallpaper §{index+1}",color=ink,modifier=Modifier.weight(1f),maxLines=1);IconButton(onClick={items=items.toMutableList().also{it.removeAt(index)};onPlaylist(items,target)}){Icon(Icons.Outlined.Close,"Remove",tint=ink.copy(alpha=.65f))}}}
-            Spacer(Modifier.height(8.dp));Text("Change every §{formatInterval(interval)}",color=ink,fontWeight=FontWeight.Medium)
+            items.forEachIndexed{index,uri->Row(Modifier.fillMaxWidth().padding(vertical=4.dp),verticalAlignment=Alignment.CenterVertically){Surface(shape=CircleShape,color=L1voGreen.copy(alpha=.12f),modifier=Modifier.size(30.dp)){Box(contentAlignment=Alignment.Center){Text("${index+1}",color=L1voDeepGreen,style=MaterialTheme.typography.labelSmall)}};Spacer(Modifier.width(9.dp));Text(Uri.parse(uri).lastPathSegment?:"Wallpaper ${index+1}",color=ink,modifier=Modifier.weight(1f),maxLines=1);IconButton(onClick={items=items.toMutableList().also{it.removeAt(index)};onPlaylist(items,target)}){Icon(Icons.Outlined.Close,"Remove",tint=ink.copy(alpha=.65f))}}}
+            Spacer(Modifier.height(8.dp));Text("Change every ${formatInterval(interval)}",color=ink,fontWeight=FontWeight.Medium)
             Slider(value=interval.toFloat(),onValueChange={interval=it.toLong().coerceIn(10,86400)},valueRange=10f..86400f,steps=95,onValueChangeFinished={if(items.isNotEmpty())onPlaylist(items,target)})
             Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){listOf(60L to "1m",300L to "5m",1800L to "30m",3600L to "1h",21600L to "6h").forEach{(s,label)->FilterChip(selected=interval==s,onClick={interval=s;if(items.isNotEmpty())onPlaylist(items,target)},label={Text(label)},modifier=Modifier.weight(1f))}}
         }}
     }
 }
-private fun formatInterval(seconds:Long):String=when{seconds<60->"§{seconds}s";seconds%3600L==0L->"§{seconds/3600L}h";else->"§{seconds/60L}m"}
+private fun formatInterval(seconds:Long):String=when{seconds<60->"${seconds}s";seconds%3600L==0L->"${seconds/3600L}h";else->"${seconds/60L}m"}
