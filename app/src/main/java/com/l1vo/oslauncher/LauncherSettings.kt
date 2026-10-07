@@ -36,6 +36,7 @@ fun L1voSettings(
     var highlightSize by remember{mutableFloatStateOf(p.getFloat(HIGHLIGHT_SIZE,1f))}
     var appSize by remember{mutableFloatStateOf(p.getFloat(APP_SIZE,1f))}
     var columns by remember{mutableIntStateOf(p.getInt(APPHUB_COLUMNS,4))}
+    var appHubNavigation by remember{mutableStateOf(p.getString(APPHUB_NAV,"scroll")?:"scroll")}
     var hspace by remember{mutableFloatStateOf(p.getFloat(APPHUB_HSPACE,10f))}
     var vspace by remember{mutableFloatStateOf(p.getFloat(APPHUB_VSPACE,14f))}
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal=20.dp).padding(top=20.dp+WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),bottom=24.dp)){
