@@ -223,6 +223,9 @@ private fun resolveIntentIcon(context:Context,intent:Intent):Bitmap?=runCatching
 @Composable private fun BrowserBridge(label:String,ink:Color,app:LaunchableApp?,modifier:Modifier,onClick:()->Unit){Surface(onClick=onClick,shape=RoundedCornerShape(16.dp),color=MaterialTheme.colorScheme.surface,shadowElevation=2.dp,modifier=modifier.height(86.dp)){Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center,modifier=Modifier.fillMaxSize()){Icon(if(label.contains("Chrome"))Icons.Outlined.Language else Icons.Outlined.Public,label,tint=L1voDeepGreen,modifier=Modifier.size(28.dp));Spacer(Modifier.height(5.dp));Text(label,color=ink,fontWeight=FontWeight.Medium,style=MaterialTheme.typography.labelSmall,maxLines=1)}}}
 private fun launchBrowser(context:Context){launch(context,Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://www.google.com")))}
 
+private fun rememberAppUse(context:Context, packageName:String){val prefs=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE);val key="app_use_$packageName";prefs.edit().putInt(key,prefs.getInt(key,0)+1).apply()}
+private fun loadFavoriteApps(context:Context, apps:List<LaunchableApp>):List<LaunchableApp>{val prefs=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE);return apps.sortedWith(compareByDescending<LaunchableApp>{prefs.getInt("app_use_${it.packageName}",0)}.thenBy{it.label.lowercase()}).take(8)}
+
 @Composable fun L1voHub(ink: Color, onBack: () -> Unit, onSettings: () -> Unit, onLeau: () -> Unit, onWallpaper: () -> Unit) {
     val context = LocalContext.current
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 18.dp)) {
