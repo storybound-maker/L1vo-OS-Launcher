@@ -44,8 +44,11 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
     var favoriteApps by remember(apps) { mutableStateOf(loadFavoriteApps(context, apps)) }
     var appPage by rememberSaveable { mutableIntStateOf(0) }
     var dragTotal by remember { mutableFloatStateOf(0f) }
+    var lockedApp by remember { mutableStateOf<LaunchableApp?>(null) }
+    var lockPin by remember { mutableStateOf("") }
+    var lockError by remember { mutableStateOf(false) }
     val filteredApps = remember(apps, query) { val q = query.trim().lowercase(); if (q.isEmpty()) apps else apps.filter { it.label.lowercase().contains(q) } }
-    fun openApp(app: LaunchableApp) { rememberAppUse(context, app.packageName); favoriteApps = loadFavoriteApps(context, apps); onOpen(app) }
+    fun openApp(app: LaunchableApp) { rememberAppUse(context, app.packageName); favoriteApps = loadFavoriteApps(context, apps); if(isAppLocked(context, app.packageName)) { lockedApp = app; lockPin = ""; lockError = false } else onOpen(app) }
     fun openL1vo(label: String) {
         when (label) {
             "STEM" -> onStem()
@@ -74,8 +77,10 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
         if(navigation=="swipe"){ item(span = { GridItemSpan(maxLineSpan) }) { Text("PAGE ${appPage + 1}/${maxOf(1,(filteredApps.size+19)/20)} • SWIPE LEFT / RIGHT", color = ink.copy(alpha=.62f), style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top=4.dp)) }; val visibleApps = filteredApps.chunked(20).getOrNull(appPage) ?: emptyList(); items(visibleApps, key = { it.packageName }, contentType = { "app" }) { app -> AppIcon(app, ::openApp, ink, appSize, highlightShape, highlightSize, onEdit) } } else { items(filteredApps, key = { it.packageName }, contentType = { "app" }) { app -> AppIcon(app, ::openApp, ink, appSize, highlightShape, highlightSize, onEdit) } }
         
     }
+    lockedApp?.let { app ->
+        AlertDialog(onDismissRequest={lockedApp=null},title={Text("Locked app")},text={Column{Text("Enter the PIN for \${appDisplayName(context,app)}");Spacer(Modifier.height(8.dp));OutlinedTextField(value=lockPin,onValueChange={lockPin=it.filter(Char::isDigit).take(12)},singleLine=true,label={Text("PIN")});if(lockError)Text("Incorrect PIN",color=MaterialTheme.colorScheme.error)}},confirmButton={TextButton(onClick={val saved=context.getSharedPreferences(PREFS,0).getString("app_pin_"+app.packageName.replace(Regex("[^A-Za-z0-9_.-]"),"_"),null);if(saved==lockPin){lockedApp=null;onOpen(app)}else lockError=true}){Text("Open")}},dismissButton={TextButton(onClick={lockedApp=null}){Text("Cancel")}})}
 }
-
+ 
 @Composable private fun SearchHub(query: String, onQueryChange: (String) -> Unit, ink: Color) {
     Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surface.copy(alpha = .94f), shadowElevation = 4.dp, modifier = Modifier.fillMaxWidth().height(58.dp)) {
         Row(Modifier.fillMaxSize().padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.Search, "Search Hub", tint = L1voDeepGreen, modifier = Modifier.size(24.dp)); Spacer(Modifier.width(10.dp)); BasicTextField(value = query, onValueChange = onQueryChange, singleLine = true, textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium), modifier = Modifier.weight(1f), decorationBox = { inner -> if (query.isEmpty()) Text("SEARCH HUB", color = MaterialTheme.colorScheme.onSurface.copy(alpha = .82f), fontWeight = FontWeight.SemiBold); inner() }); if (query.isNotEmpty()) IconButton(onClick = { onQueryChange("") }) { Icon(Icons.Outlined.Close, "Clear search", tint = L1voDeepGreen) } }
