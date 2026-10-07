@@ -22,7 +22,7 @@ import java.util.Locale
 @Composable
 fun L1voSettings(
     p:android.content.SharedPreferences,dark:Boolean,onTheme:(Boolean)->Unit,onFont:(String)->Unit,
-    onBack:()->Unit,onWallpaper:()->Unit,onCube:(String)->Unit,onAccessibility:()->Unit,onDefaultLauncher:()->Unit
+    onBack:()->Unit,onWallpaper:()->Unit,onCube:(String)->Unit,onAccessibility:()->Unit,onDefaultLauncher:()->Unit,onChanged:()->Unit
 ){
     val ink=if(dark)Color.White else MaterialTheme.colorScheme.onSurface
     var section by rememberSaveable{mutableStateOf<String?>(null)}
@@ -56,11 +56,11 @@ fun L1voSettings(
                 Triple("About","L1vo OS Launcher information",Icons.Outlined.Info)
             ).forEach{(t,s,i)->MainSettingRow(t,s,i,ink){section=t}}
         }else when(section){
-            "Accounts"->AccountsSettings(p,ink,notif,{notif=it;p.edit().putBoolean(NOTIFICATIONS,it).apply()})
-            "Appearance"->AppearanceSettings(p,dark,ink,font,fontSize,fontColor,{font=it;onFont(it)},{fontSize=it;p.edit().putFloat(FONT_SIZE,it).apply()},{fontColor=it;p.edit().putString(FONT_COLOR,it).apply()},{onTheme(!dark)},onWallpaper)
-            "App presentation"->AppPresentationSettings(p,ink,columns,hspace,vspace,appSize,highlight,highlightSize,{columns=it;p.edit().putInt(APPHUB_COLUMNS,it).apply()},{hspace=it;p.edit().putFloat(APPHUB_HSPACE,it).apply()},{vspace=it;p.edit().putFloat(APPHUB_VSPACE,it).apply()},{appSize=it;p.edit().putFloat(APP_SIZE,it).apply()},{highlight=it;p.edit().putString(HIGHLIGHT_SHAPE,it).apply()},{highlightSize=it;p.edit().putFloat(HIGHLIGHT_SIZE,it).apply()})
+            "Accounts"->AccountsSettings(p,ink,notif,{notif=it;p.edit().putBoolean(NOTIFICATIONS,it).apply();onChanged()})
+            "Appearance"->AppearanceSettings(p,dark,ink,font,fontSize,fontColor,{font=it;onFont(it);onChanged()},{fontSize=it;p.edit().putFloat(FONT_SIZE,it).apply();onChanged()},{fontColor=it;p.edit().putString(FONT_COLOR,it).apply();onChanged()},{onTheme(!dark);onChanged()},onWallpaper)
+            "App presentation"->AppPresentationSettings(p,ink,columns,hspace,vspace,appSize,highlight,highlightSize,{columns=it;p.edit().putInt(APPHUB_COLUMNS,it).apply();onChanged()},{hspace=it;p.edit().putFloat(APPHUB_HSPACE,it).apply();onChanged()},{vspace=it;p.edit().putFloat(APPHUB_VSPACE,it).apply();onChanged()},{appSize=it;p.edit().putFloat(APP_SIZE,it).apply();onChanged()},{highlight=it;p.edit().putString(HIGHLIGHT_SHAPE,it).apply();onChanged()},{highlightSize=it;p.edit().putFloat(HIGHLIGHT_SIZE,it).apply();onChanged()})
             "Home & Cube"->HomeCubeSettings(ink,onCube,onWallpaper)
-            "Accessibility"->AccessibilitySettings(p,ink,anim,pill,{anim=it;p.edit().putBoolean(ANIMATIONS,it).apply()},{pill=it;p.edit().putBoolean(PILL_APP,it).apply()},onAccessibility)
+            "Accessibility"->AccessibilitySettings(p,ink,anim,pill,{anim=it;p.edit().putBoolean(ANIMATIONS,it).apply();onChanged()},{pill=it;p.edit().putBoolean(PILL_APP,it).apply();onChanged()},onAccessibility)
             "Launcher"->LauncherSettingsPage(ink,onDefaultLauncher)
             "About"->AboutSettings(ink)
         }
