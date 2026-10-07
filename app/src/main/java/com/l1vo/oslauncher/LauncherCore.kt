@@ -96,7 +96,7 @@ import java.net.URL
                 val info=AppWidgetManager.getInstance(context).getAppWidgetInfo(id)
                 val pos=offsets[id]?:Offset.Zero
                 if(info!=null)Box(Modifier.fillMaxWidth().height(150.dp).offset{IntOffset(pos.x.roundToInt(),pos.y.roundToInt())}.pointerInput(id){detectDragGesturesAfterLongPress(onDragStart={moving="android:$id"},onDragEnd={prefs.edit().putFloat("widget_x_$id",offsets[id]?.x?:0f).putFloat("widget_y_$id",offsets[id]?.y?:0f).apply()}){change,dragAmount->change.consume();offsets=offsets.toMutableMap().also{it[id]=(it[id]?:Offset.Zero)+dragAmount}}}){
-                    AndroidView(factory={widgetHost?.createView(context,id,info)},modifier=Modifier.fillMaxSize())
+                    AndroidView(factory={widgetHost!!.createView(context,id,info)},modifier=Modifier.fillMaxSize())
                 }
             }
         }
@@ -104,7 +104,7 @@ import java.net.URL
     }
     if(moving!=null)Surface(onClick={
         val m=moving!!
-        if(m.startsWith("android:")){val id=m.removePrefix("android:").toIntOrNull();if(id!=null){widgetHost?.deleteAppWidgetId(id);widgetIds=widgetIds.filterNot{it==id};prefs.edit().putStringSet("home_widget_ids",widgetIds.map{it.toString()}.toSet()).apply()}}
+        if(m.startsWith("android:")){val id=m.removePrefix("android:").toIntOrNull();if(id!=null){widgetHost?.deleteAppWidgetId(id);widgetIds=widgetIds.filterNot{it==id};prefs.edit().putStringSet("home_widget_ids",widgetIds.map{it.toString()}.toSet()).apply()}} else if(m in listOf("weather","calendar","notes","maps")){prefs.edit().putBoolean("home_system_\$m",false).apply()}
         moving=null
     },color=Color.Red,shape=RoundedCornerShape(18.dp),modifier=Modifier.fillMaxWidth().padding(horizontal=28.dp).height(52.dp)){Box(contentAlignment=Alignment.Center){Text("DROP HERE TO DELETE",color=Color.White,fontWeight=FontWeight.Bold)}}
     if(showNote){var draft by remember(note){mutableStateOf(note)};AlertDialog(onDismissRequest={showNote=false},title={Text("Quick note")},text={OutlinedTextField(value=draft,onValueChange={draft=it},modifier=Modifier.fillMaxWidth(),minLines=4)},confirmButton={TextButton(onClick={note=draft;prefs.edit().putString("home_note",draft).apply();showNote=false}){Text("Save")}},dismissButton={TextButton(onClick={showNote=false}){Text("Cancel")}})}
