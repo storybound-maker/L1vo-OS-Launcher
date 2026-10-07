@@ -71,7 +71,7 @@ import androidx.compose.ui.unit.sp
                     ink,{page=wallpaperReturnPage},
                     {target,u->saveWallpaperTarget(p,target,u);wallpaper=u;refreshWall++;page=wallpaperReturnPage},
                     {items,target,newInterval->savePlaylistTarget(p,target,items,newInterval);when(target){"home"->intervalHome=newInterval;"hub"->intervalHub=newInterval;"main"->intervalMain=newInterval;"all"->{intervalMain=newInterval;intervalHome=newInterval;intervalHub=newInterval}};refreshWall++;},
-                    {runCatching{c.startActivity(Intent(WallpaperManager.ACTION_LIVE_WALLPAPER_CHOOSER))}},
+                    {p.edit().putString(WALLPAPER_MODE,"system").apply();runCatching{c.startActivity(Intent(WallpaperManager.ACTION_LIVE_WALLPAPER_CHOOSER))}},
                     activePlaylist,interval,mapOf("main" to targetPlaylist("main"),"home" to targetPlaylist("home"),"hub" to targetPlaylist("hub")),mapOf("main" to intervalMain,"home" to intervalHome,"hub" to intervalHub)
                 )
                 else->HomeCube(slots,apps,ink,{page="dashboard"},{page="hub"},{launchLeau(c)},{wallpaperReturnPage="cube";page="wallpaper"},{edit=it},anim)
