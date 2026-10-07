@@ -26,7 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 private fun appKey(pkg:String)=pkg.replace(Regex("[^A-Za-z0-9_.-]"),"_")
-private fun appPref(pkg:String,key:String) = "app_\${key}_\${appKey(pkg)}"
+private fun appPref(pkg:String,key:String) = "app_${key}_${appKey(pkg)}"
 fun appDisplayName(c:Context,a:LaunchableApp):String = c.getSharedPreferences(PREFS,0).getString(appPref(a.packageName,"name"),null)?.takeIf{it.isNotBlank()} ?: a.label
 fun appFont(c:Context,pkg:String):String = c.getSharedPreferences(PREFS,0).getString(appPref(pkg,"font"),"Sans") ?: "Sans"
 fun appIconUri(c:Context,pkg:String):String?=c.getSharedPreferences(PREFS,0).getString(appPref(pkg,"icon"),null)
@@ -47,11 +47,11 @@ fun AppActionMenu(app:LaunchableApp,ink:Color,onDismiss:()->Unit,onEdit:()->Unit
             TextButton(onClick={if(isAppLocked(context,app.packageName))showLock=true else{launch(context,app.intent);onDismiss()}},modifier=Modifier.fillMaxWidth()){Text("Open",color=ink)}
             TextButton(onClick={showInfo=true},modifier=Modifier.fillMaxWidth()){Text("Info",color=ink)}
             TextButton(onClick={showLock=true},modifier=Modifier.fillMaxWidth()){Text(if(isAppLocked(context,app.packageName))"Unlock" else "Lock",color=ink)}
-            TextButton(onClick={runCatching{context.startActivity(Intent(Intent.ACTION_DELETE,Uri.parse("package:\${app.packageName}")))}.getOrNull();onDismiss()},modifier=Modifier.fillMaxWidth()){Text("Uninstall",color=ink)}
+            TextButton(onClick={runCatching{context.startActivity(Intent(Intent.ACTION_DELETE,Uri.parse("package:${app.packageName}")))}.getOrNull();onDismiss()},modifier=Modifier.fillMaxWidth()){Text("Uninstall",color=ink)}
             TextButton(onClick={onDismiss();onEdit()},modifier=Modifier.fillMaxWidth()){Text("Edit",color=ink)}
         }
     },confirmButton={})
-    if(showInfo)AlertDialog(onDismissRequest={showInfo=false},title={Text("App info")},text={Column{Text("Name: \${appDisplayName(context,app)}");Text("Package: \${app.packageName}",style=MaterialTheme.typography.bodySmall);Text("Installed application",style=MaterialTheme.typography.bodySmall)}},confirmButton={TextButton(onClick={showInfo=false}){Text("Done")}})
+    if(showInfo)AlertDialog(onDismissRequest={showInfo=false},title={Text("App info")},text={Column{Text("Name: ${appDisplayName(context,app)}");Text("Package: ${app.packageName}",style=MaterialTheme.typography.bodySmall);Text("Installed application",style=MaterialTheme.typography.bodySmall)}},confirmButton={TextButton(onClick={showInfo=false}){Text("Done")}})
     if(showLock)AlertDialog(onDismissRequest={showLock=false;pin="";error=false},title={Text(if(isAppLocked(context,app.packageName))"Enter PIN" else "Set app PIN")},text={Column{OutlinedTextField(value=pin,onValueChange={pin=it.filter(Char::isDigit).take(12)},label={Text("PIN")},singleLine=true);if(error)Text("Incorrect PIN",color=MaterialTheme.colorScheme.error)}},confirmButton={TextButton(onClick={
         val existing=context.getSharedPreferences(PREFS,0).getString(appPref(app.packageName,"pin"),null)
         if(existing==null){if(pin.length>=4){setAppPin(context,app.packageName,pin);showLock=false;pin=""}}else if(pin==existing){showLock=false;pin=""}else error=true
