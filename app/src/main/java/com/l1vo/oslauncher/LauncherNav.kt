@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.sp
     val activeWallpaper=targetWallpaper(wallpaperTarget)
     val activePlaylist=targetPlaylist(wallpaperTarget)
     val ink=if(dark)Color.White else if(configuredFontColor=="white")Color.White else if(configuredFontColor=="green")L1voGreen else if(configuredFontColor=="warm")Color(0xFFFFF4D6) else L1voInk
-    val homeInk=ink
+    val homeInk=if(page=="dashboard")Color.White else ink
     val apps=remember(refresh){loadApps(c)}
     val slots=remember(refresh){loadSlots(c)}
     val anim=p.getBoolean(ANIMATIONS,true)
@@ -63,7 +63,7 @@ import androidx.compose.ui.unit.sp
         )
     ){
         Surface(Modifier.fillMaxSize(),color=if(useSystemWallpaper)Color.Transparent else Color.Transparent){
-            WallpaperBackground(activeWallpaper,dark,activePlaylist,interval,useSystemWallpaper)
+            WallpaperBackground(activeWallpaper,dark || page=="dashboard" || page=="home_settings",activePlaylist,interval,useSystemWallpaper)
             when(page){
                 "dashboard"->HomeDashboard(apps,slots,homeInk,{page="cube"},{page="hub"},{launchLeau(c)},{page="home_settings"},anim)
                 "hub"->AppHub(apps,ink,{page="cube"},{launchLeau(c)},{wallpaperReturnPage="hub";page="wallpaper"},{if(isAppLocked(c,it.packageName)){page="hub"}else{launch(c,it.intent);page="dashboard"}},{page="l1vo"},{page="leacher"},{page="settings"},{editingApp=it;page="app_editor"},columns,appHubNavigation,hspace,vspace,appSize,highlightShape,highlightSize)
