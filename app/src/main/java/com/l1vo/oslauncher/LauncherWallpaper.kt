@@ -10,7 +10,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Collections
@@ -113,7 +115,7 @@ fun WallpaperStudio(ink: Color, onBack: () -> Unit, onSave: (String) -> Unit, on
             if (saved.isNotEmpty()) onPlaylist(saved)
         }
     }
-    Column(Modifier.fillMaxSize().verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(20.dp)) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack, modifier = Modifier.offset(y = 8.dp).size(56.dp)) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back", tint = ink) }
             Column(Modifier.weight(1f)) { Text("Wallpaper", color = ink, style = MaterialTheme.typography.headlineMedium); Text("Wallpaper Studio", color = L1voGreen) }
