@@ -59,12 +59,13 @@ private fun drawableToWallpaperBitmap(d:Drawable):Bitmap=d.toBitmap(1080,1920,Bi
 @Composable
 fun WallpaperStudio(
     ink:Color,onBack:()->Unit,onSave:(String,String)->Unit,onPlaylist:(List<String>,String)->Unit,
-    onLiveWallpaper:()->Unit,playlist:List<String>,intervalSeconds:Long
+    onLiveWallpaper:()->Unit,playlist:List<String>,intervalSeconds:Long,playlists:Map<String,List<String>> = emptyMap()
 ){
     val context=LocalContext.current
     var target by rememberSaveable{mutableStateOf("all")}
     var interval by rememberSaveable{mutableLongStateOf(intervalSeconds)}
     var items by remember(playlist){mutableStateOf(playlist)}
+    LaunchedEffect(target,playlists){items=playlists[target]?:playlist}
     val picker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){u->if(u!=null){runCatching{context.contentResolver.takePersistableUriPermission(u,Intent.FLAG_GRANT_READ_URI_PERMISSION)};onSave(target,u.toString())}}
     val multiPicker=rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()){uris->if(uris.isNotEmpty()){val saved=uris.mapNotNull{u->runCatching{context.contentResolver.takePersistableUriPermission(u,Intent.FLAG_GRANT_READ_URI_PERMISSION)};u.toString()};if(saved.isNotEmpty()){items=saved;onPlaylist(saved,target)}}}
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)){
