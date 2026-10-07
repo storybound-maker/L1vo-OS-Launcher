@@ -33,8 +33,8 @@ import androidx.compose.ui.unit.sp
     val font=when(p.getString(FONT,"Sans")){"Serif"->FontFamily.Serif;"Mono"->FontFamily.Monospace;"Cursive"->FontFamily.Cursive;"Condensed"->FontFamily.SansSerif;else->FontFamily.SansSerif}
     val fontScale=p.getFloat(FONT_SIZE,1f)
     val configuredFontColor=p.getString(FONT_COLOR,"auto")?:"auto"
-    fun targetWallpaper(target:String):String?=when(target){"home"->p.getString(WALLPAPER_HOME,null)?:p.getString(WALLPAPER_ALL,null)?:wallpaper;"hub"->p.getString(WALLPAPER_HUB,null)?:p.getString(WALLPAPER_ALL,null)?:wallpaper;else->p.getString(WALLPAPER_MAIN,null)?:p.getString(WALLPAPER_ALL,null)?:wallpaper}
-    fun targetPlaylist(target:String):List<String>{val raw=when(target){"home"->p.getString(WALLPAPER_PLAYLIST_HOME,null);"hub"->p.getString(WALLPAPER_PLAYLIST_HUB,null);else->p.getString(WALLPAPER_PLAYLIST_MAIN,null)}?:p.getString(WALLPAPER_PLAYLIST_ALL,null);return raw?.split("\n")?.filter{it.isNotBlank()}?:emptyList()}
+    fun targetWallpaper(target:String):String?=when(target){"home"->p.getString(WALLPAPER_HOME,null)?.takeIf{it.isNotBlank()}?:p.getString(WALLPAPER_ALL,null)?.takeIf{it.isNotBlank()}?:wallpaper;"hub"->p.getString(WALLPAPER_HUB,null)?.takeIf{it.isNotBlank()}?:p.getString(WALLPAPER_ALL,null)?.takeIf{it.isNotBlank()}?:wallpaper;else->p.getString(WALLPAPER_MAIN,null)?.takeIf{it.isNotBlank()}?:p.getString(WALLPAPER_ALL,null)?.takeIf{it.isNotBlank()}?:wallpaper}
+    fun targetPlaylist(target:String):List<String>{val raw=when(target){"home"->p.getString(WALLPAPER_PLAYLIST_HOME,null)?.takeIf{it.isNotBlank()}?:p.getString(WALLPAPER_PLAYLIST_ALL,null);"hub"->p.getString(WALLPAPER_PLAYLIST_HUB,null)?.takeIf{it.isNotBlank()}?:p.getString(WALLPAPER_PLAYLIST_ALL,null);else->p.getString(WALLPAPER_PLAYLIST_MAIN,null)?.takeIf{it.isNotBlank()}?:p.getString(WALLPAPER_PLAYLIST_ALL,null)};return raw?.split("\n")?.filter{it.isNotBlank()}?:emptyList()}
     val wallpaperTarget=when(page){"dashboard"->"home";"hub","leacher"->"hub";else->"main"}
     val activeWallpaper=targetWallpaper(wallpaperTarget)
     val activePlaylist=targetPlaylist(wallpaperTarget)
