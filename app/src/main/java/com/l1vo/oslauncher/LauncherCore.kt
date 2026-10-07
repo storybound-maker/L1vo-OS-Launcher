@@ -71,6 +71,7 @@ import java.net.URL
     var offsets by remember(widgetIds){mutableStateOf(widgetIds.associateWith{id->Offset(prefs.getFloat("widget_x_$id",0f),prefs.getFloat("widget_y_$id",0f))})}
     var moving by remember{mutableStateOf<String?>(null)}
     val enabledSystem=listOf("weather","calendar","notes","maps").filter{prefs.getBoolean("home_system_$it",true)}
+    var systemOffsets by remember(enabledSystem){mutableStateOf(enabledSystem.associateWith{key->Offset(prefs.getFloat("system_x_$key",0f),prefs.getFloat("system_y_$key",0f))})}
     LaunchedEffect(Unit){while(true){delay(1000);now=System.currentTimeMillis();val latest=prefs.getStringSet("home_widget_ids",emptySet())!!.mapNotNull{it.toIntOrNull()};if(latest!=widgetIds)widgetIds=latest}}
     LaunchedEffect(hasLocation){if(hasLocation){val lm=context.getSystemService(Context.LOCATION_SERVICE) as LocationManager;val loc=runCatching{lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)?:lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)}.getOrNull();if(loc!=null){weather=try{withContext(Dispatchers.IO){val json=URL("https://api.open-meteo.com/v1/forecast?latitude="+loc.latitude+"&longitude="+loc.longitude+"&current=temperature_2m,weather_code&timezone=auto").readText();val cur=JSONObject(json).getJSONObject("current");cur.getDouble("temperature_2m").toInt().toString()+"° • "+weatherCodeLabel(cur.getInt("weather_code"))}}catch(_:Exception){"Weather unavailable"}}else weather="Location unavailable"}}
     LaunchedEffect(Unit){if(context.checkSelfPermission(Manifest.permission.READ_CALENDAR)==PackageManager.PERMISSION_GRANTED){nextEvent=try{context.contentResolver.query(CalendarContract.Instances.CONTENT_URI.buildUpon().apply{appendPath(System.currentTimeMillis().toString());appendPath((System.currentTimeMillis()+7*24*60*60*1000).toString())}.build(),arrayOf(CalendarContract.Instances.EVENT_ID,CalendarContract.Instances.TITLE,CalendarContract.Instances.BEGIN),null,null,CalendarContract.Instances.BEGIN+" ASC")?.use{cur->if(cur.moveToFirst())cur.getString(cur.getColumnIndexOrThrow(CalendarContract.Instances.TITLE)) else "No upcoming event"}?:"No upcoming event"}catch(_:Exception){"Calendar unavailable"}}}
@@ -85,12 +86,12 @@ import java.net.URL
         Spacer(Modifier.height(8.dp))
         Column(Modifier.weight(1f).fillMaxWidth(),verticalArrangement=Arrangement.spacedBy(10.dp)){
             enabledSystem.forEach{key->
-                HomeSystemWidget(key,if(key=="weather")weather else if(key=="calendar")nextEvent else if(key=="notes")if(note.isBlank())"Tap to write" else note else "Open live map",ink,context,{moving=key},{
+                HomeSystemWidget(key,if(key=="weather")weather else if(key=="calendar")nextEvent else if(key=="notes")if(note.isBlank())"Tap to write" else note else "Open live map",ink,context,systemOffsets[key]?:Offset.Zero,{moving=key},{
                     when(key){"weather"->if(!hasLocation)locationPermission.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
                     "calendar"->launch(context,Intent(Intent.ACTION_VIEW).apply{data=android.net.Uri.parse("content://com.android.calendar/time/"+now)})
                     "notes"->showNote=true
                     "maps"->launch(context,Intent(Intent.ACTION_VIEW,android.net.Uri.parse("geo:0,0?q=My+Location")))}
-                }){moving=null;prefs.edit().putBoolean("home_system_$key",false).apply()}
+                }){newOffset->systemOffsets=systemOffsets.toMutableMap().also{it[key]=newOffset};prefs.edit().putFloat("system_x_$key",newOffset.x).putFloat("system_y_$key",newOffset.y).apply()}
             }
             widgetIds.forEach{id->
                 val info=AppWidgetManager.getInstance(context).getAppWidgetInfo(id)
@@ -111,10 +112,10 @@ import java.net.URL
 }
 
 @OptIn(ExperimentalFoundationApi::class)
-@Composable private fun HomeSystemWidget(key:String,subtitle:String,ink:Color,context:Context,onMoving:()->Unit,onClick:()->Unit,onDelete:()->Unit){
+@Composable private fun HomeSystemWidget(key:String,subtitle:String,ink:Color,context:Context,offset:Offset,onMoving:()->Unit,onClick:()->Unit,onMoved:(Offset)->Unit){
     val icon=when(key){"weather"->Icons.Outlined.WbSunny;"calendar"->Icons.Outlined.CalendarMonth;"notes"->Icons.Outlined.EditNote;else->Icons.Outlined.Map}
-    var drag by remember{mutableStateOf(Offset.Zero)}
-    Surface(shape=RoundedCornerShape(24.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.94f),shadowElevation=4.dp,modifier=Modifier.fillMaxWidth().height(118.dp).pointerInput(key){detectDragGesturesAfterLongPress(onDragStart={onMoving()}){change,amount->change.consume();drag+=amount}}){
+    var current by remember(offset){mutableStateOf(offset)}
+    Surface(shape=RoundedCornerShape(24.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.94f),shadowElevation=4.dp,modifier=Modifier.fillMaxWidth().height(118.dp).offset{IntOffset(current.x.roundToInt(),current.y.roundToInt())}.pointerInput(key){detectDragGesturesAfterLongPress(onDragStart={onMoving() },onDragEnd={onMoved(current)}){change,amount->change.consume();current+=amount}}){
         Row(Modifier.fillMaxSize().padding(16.dp),verticalAlignment=Alignment.CenterVertically){
             Surface(shape=RoundedCornerShape(16.dp),color=L1voGreen.copy(alpha=.12f),modifier=Modifier.size(50.dp)){Box(contentAlignment=Alignment.Center){Icon(icon,key,tint=L1voDeepGreen)}}
             Spacer(Modifier.width(14.dp));Column(Modifier.weight(1f)){Text(key.replaceFirstChar{it.uppercase()},color=ink,fontWeight=FontWeight.SemiBold);Text(subtitle,color=ink.copy(alpha=.62f),style=MaterialTheme.typography.bodySmall)}
