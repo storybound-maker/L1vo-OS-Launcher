@@ -78,7 +78,7 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
         
     }
     lockedApp?.let { app ->
-        AlertDialog(onDismissRequest={lockedApp=null},title={Text("Locked app")},text={Column{Text("Enter the PIN for \${appDisplayName(context,app)}");Spacer(Modifier.height(8.dp));OutlinedTextField(value=lockPin,onValueChange={lockPin=it.filter(Char::isDigit).take(12)},singleLine=true,label={Text("PIN")});if(lockError)Text("Incorrect PIN",color=MaterialTheme.colorScheme.error)}},confirmButton={TextButton(onClick={val saved=context.getSharedPreferences(PREFS,0).getString("app_pin_"+app.packageName.replace(Regex("[^A-Za-z0-9_.-]"),"_"),null);if(saved==lockPin){lockedApp=null;onOpen(app)}else lockError=true}){Text("Open")}},dismissButton={TextButton(onClick={lockedApp=null}){Text("Cancel")}})}
+        AlertDialog(onDismissRequest={lockedApp=null},title={Text("Locked app")},text={Column{Text("Enter the PIN for ${appDisplayName(context,app)}");Spacer(Modifier.height(8.dp));OutlinedTextField(value=lockPin,onValueChange={lockPin=it.filter(Char::isDigit).take(12)},singleLine=true,label={Text("PIN")});if(lockError)Text("Incorrect PIN",color=MaterialTheme.colorScheme.error)}},confirmButton={TextButton(onClick={val saved=context.getSharedPreferences(PREFS,0).getString("app_pin_"+app.packageName.replace(Regex("[^A-Za-z0-9_.-]"),"_"),null);if(saved==lockPin){lockedApp=null;onOpen(app)}else lockError=true}){Text("Open")}},dismissButton={TextButton(onClick={lockedApp=null}){Text("Cancel")}})}
 }
  
 @Composable private fun SearchHub(query: String, onQueryChange: (String) -> Unit, ink: Color) {
