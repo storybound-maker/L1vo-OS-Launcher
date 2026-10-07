@@ -98,3 +98,4 @@ fun launch(c:Context,i:Intent){runCatching{if(c is android.app.Activity)c.startA
 fun loadApps(c:Context):List<LaunchableApp>{val pm=c.packageManager;val q=Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER);return pm.queryIntentActivities(q,PackageManager.MATCH_ALL).mapNotNull{info->val l=info.loadLabel(pm)?.toString()?.takeIf{it.isNotBlank()}?:return@mapNotNull null;val icon=info.loadIcon(pm)?.let{drawableToBitmap(it,64)}?:return@mapNotNull null;LaunchableApp(l,info.activityInfo.packageName,Intent(q).setClassName(info.activityInfo.packageName,info.activityInfo.name),icon)}.distinctBy{it.packageName}.sortedBy{it.label.lowercase(Locale.getDefault())}}
 fun appLabel(c:Context,pkg:String)=runCatching{c.packageManager.getApplicationLabel(c.packageManager.getApplicationInfo(pkg,0)).toString()}.getOrDefault("App")
 fun drawableToBitmap(d:Drawable,size:Int=64)=d.toBitmap(size,size,Bitmap.Config.ARGB_8888)
+
