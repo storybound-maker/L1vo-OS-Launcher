@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.sp
     val slots=remember(refresh){loadSlots(c)}
     val anim=p.getBoolean(ANIMATIONS,true)
     val columns=p.getInt(APPHUB_COLUMNS,4)
+    val appHubNavigation=p.getString(APPHUB_NAV,"scroll")?:"scroll"
     val hspace=p.getFloat(APPHUB_HSPACE,10f)
     val vspace=p.getFloat(APPHUB_VSPACE,14f)
     val appSize=p.getFloat(APP_SIZE,1f)
@@ -64,7 +65,7 @@ import androidx.compose.ui.unit.sp
             WallpaperBackground(activeWallpaper,dark,activePlaylist,interval,useSystemWallpaper)
             when(page){
                 "dashboard"->HomeDashboard(apps,slots,homeInk,{page="cube"},{page="hub"},{launchLeau(c)},{page="settings"},anim)
-                "hub"->AppHub(apps,ink,{page="cube"},{launchLeau(c)},{wallpaperReturnPage="hub";page="wallpaper"},{launch(c,it.intent);page="dashboard"},{page="l1vo"},{page="leacher"},{page="settings"},columns,hspace,vspace,appSize,highlightShape,highlightSize)
+                "hub"->AppHub(apps,ink,{page="cube"},{launchLeau(c)},{wallpaperReturnPage="hub";page="wallpaper"},{launch(c,it.intent);page="dashboard"},{page="l1vo"},{page="leacher"},{page="settings"},columns,appHubNavigation,hspace,vspace,appSize,highlightShape,highlightSize)
                 "leacher"->LeacherScreen(apps,ink){page="hub"}
                 "l1vo"->L1voHub(ink,{page="hub"},{page="settings"},{launchLeau(c)},{wallpaperReturnPage="l1vo";page="wallpaper"})
                 "settings"->L1voSettings(p,dark,{dark=it;p.edit().putBoolean(DARK_THEME,it).apply()},{p.edit().putString(FONT,it).apply();refresh++},{page="cube"},{wallpaperReturnPage="settings";page="wallpaper"},{edit=it},{launch(c,Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))},{launch(c,Intent(Settings.ACTION_HOME_SETTINGS))},{refresh++})
