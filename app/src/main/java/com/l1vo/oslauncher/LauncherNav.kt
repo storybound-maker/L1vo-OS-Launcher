@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.sp
     var page by remember{mutableStateOf("cube")}
     var wallpaperReturnPage by remember{mutableStateOf("cube")}
     var edit by remember{mutableStateOf<String?>(null)}
+    var editingApp by remember{mutableStateOf<LaunchableApp?>(null)}
     var refresh by remember{mutableIntStateOf(0)}
     var wallpaper by remember{mutableStateOf(p.getString(WALLPAPER,null))}
     var dark by remember{mutableStateOf(p.getBoolean(DARK_THEME,false))}
@@ -64,9 +65,11 @@ import androidx.compose.ui.unit.sp
         Surface(Modifier.fillMaxSize(),color=if(useSystemWallpaper)Color.Transparent else Color.Transparent){
             WallpaperBackground(activeWallpaper,dark,activePlaylist,interval,useSystemWallpaper)
             when(page){
-                "dashboard"->HomeDashboard(apps,slots,homeInk,{page="cube"},{page="hub"},{launchLeau(c)},{page="settings"},anim)
-                "hub"->AppHub(apps,ink,{page="cube"},{launchLeau(c)},{wallpaperReturnPage="hub";page="wallpaper"},{launch(c,it.intent);page="dashboard"},{page="l1vo"},{page="leacher"},{page="settings"},columns,appHubNavigation,hspace,vspace,appSize,highlightShape,highlightSize)
+                "dashboard"->HomeDashboard(apps,slots,homeInk,{page="cube"},{page="hub"},{launchLeau(c)},{page="home_settings"},anim)
+                "hub"->AppHub(apps,ink,{page="cube"},{launchLeau(c)},{wallpaperReturnPage="hub";page="wallpaper"},{if(isAppLocked(c,it.packageName)){page="hub"}else{launch(c,it.intent);page="dashboard"}},{page="l1vo"},{page="leacher"},{page="settings"},{editingApp=it;page="app_editor"},columns,appHubNavigation,hspace,vspace,appSize,highlightShape,highlightSize)
                 "leacher"->LeacherScreen(apps,ink){page="hub"}
+                "home_settings"->HomeHubSettings(c,ink,{page="dashboard"},{activity?.pickHomeWidget() ?: Unit})
+                "app_editor"->editingApp?.let{AppEditorScreen(it,ink,{editingApp=null;page="hub"}){refresh++;editingApp=null}}
                 "l1vo"->L1voHub(ink,{page="hub"},{page="settings"},{launchLeau(c)},{wallpaperReturnPage="l1vo";page="wallpaper"})
                 "settings"->L1voSettings(p,dark,{dark=it;p.edit().putBoolean(DARK_THEME,it).apply()},{p.edit().putString(FONT,it).apply();refresh++},{page="cube"},{wallpaperReturnPage="settings";page="wallpaper"},{edit=it},{launch(c,Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))},{launch(c,Intent(Settings.ACTION_HOME_SETTINGS))},{refresh++})
                 "wallpaper"->WallpaperStudio(
