@@ -91,12 +91,12 @@ fun WallpaperStudio(
             Text("Each space has its own wallpaper and playlist.",color=ink.copy(alpha=.72f))
             Spacer(Modifier.height(12.dp))
             listOf("all" to "All","main" to "Main","home" to "Home Hub","hub" to "App Hub").forEach{(id,label)->
-                val list=if(id=="all")playlists["main"] else playlists[id]
+                val list=playlists[id]
                 val preview=list?.firstOrNull()
                 Surface(onClick={target=id;interval=intervals[id]?:intervalSeconds;items=list?:emptyList()},shape=RoundedCornerShape(24.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.96f),shadowElevation=3.dp,modifier=Modifier.fillMaxWidth().padding(vertical=6.dp)){
                     Row(Modifier.height(108.dp),verticalAlignment=Alignment.CenterVertically){
                         WallpaperThumb(preview,Modifier.size(92.dp).padding(8.dp))
-                        Column(Modifier.weight(1f)){Text(label,color=ink,fontWeight=FontWeight.SemiBold);Text(if(preview==null)"No wallpaper selected" else "Current wallpaper",color=ink.copy(alpha=.62f),style=MaterialTheme.typography.bodySmall);Text("Playlist: \${list?.size?:0} • \${formatInterval(intervals[id]?:intervalSeconds)}",color=ink.copy(alpha=.55f),style=MaterialTheme.typography.bodySmall)}
+                        Column(Modifier.weight(1f)){Text(label,color=ink,fontWeight=FontWeight.SemiBold);Text(if(preview==null)"No wallpaper selected" else "Current wallpaper",color=ink.copy(alpha=.62f),style=MaterialTheme.typography.bodySmall);Text("Playlist: ${list?.size?:0} • ${formatInterval(intervals[id]?:intervalSeconds)}",color=ink.copy(alpha=.55f),style=MaterialTheme.typography.bodySmall)}
                         Icon(Icons.Outlined.ChevronRight,"Open",tint=L1voGreen,modifier=Modifier.padding(14.dp))
                     }
                 }
@@ -120,12 +120,12 @@ fun WallpaperStudio(
                         Row(Modifier.fillMaxWidth().padding(vertical=5.dp),verticalAlignment=Alignment.CenterVertically){
                             WallpaperThumb(uri,Modifier.size(56.dp))
                             Spacer(Modifier.width(9.dp))
-                            Column(Modifier.weight(1f)){Text(Uri.parse(uri).lastPathSegment?:"Wallpaper \${index+1}",color=ink,maxLines=1);Text("Item \${index+1}",color=ink.copy(alpha=.55f),style=MaterialTheme.typography.labelSmall)}
+                            Column(Modifier.weight(1f)){Text(Uri.parse(uri).lastPathSegment?:"Wallpaper ${index+1}",color=ink,maxLines=1);Text("Item ${index+1}",color=ink.copy(alpha=.55f),style=MaterialTheme.typography.labelSmall)}
                             IconButton(onClick={items=items.toMutableList().also{it.removeAt(index)};onPlaylist(items,target!!,interval)}){Icon(Icons.Outlined.Close,"Remove",tint=ink.copy(alpha=.65f))}
                         }
                     }
                     Spacer(Modifier.height(8.dp))
-                    Text("Change every \${formatInterval(interval)}",color=ink,fontWeight=FontWeight.Medium)
+                    Text("Change every ${formatInterval(interval)}",color=ink,fontWeight=FontWeight.Medium)
                     Slider(value=interval.toFloat(),onValueChange={interval=it.toLong().coerceIn(10,86400)},valueRange=10f..86400f,steps=95,onValueChangeFinished={onPlaylist(items,target!!,interval)})
                     Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){listOf(60L to "1m",300L to "5m",1800L to "30m",3600L to "1h",21600L to "6h").forEach{(v,label)->FilterChip(selected=interval==v,onClick={interval=v;onPlaylist(items,target!!,interval)},label={Text(label)},modifier=Modifier.weight(1f))}}
                 }
