@@ -66,7 +66,7 @@ import androidx.compose.ui.unit.sp
             WallpaperBackground(activeWallpaper,dark || page=="dashboard" || page=="home_settings",activePlaylist,interval,useSystemWallpaper)
             when(page){
                 "dashboard"->HomeDashboard(apps,slots,homeInk,{page="cube"},{page="hub"},{launchLeau(c)},{page="home_settings"},anim)
-                "hub"->AppHub(apps,ink,{page="cube"},{launchLeau(c)},{wallpaperReturnPage="hub";page="wallpaper"},{if(isAppLocked(c,it.packageName)){page="hub"}else{launch(c,it.intent);page="dashboard"}},{page="l1vo"},{page="leacher"},{page="settings"},{editingApp=it;page="app_editor"},columns,appHubNavigation,hspace,vspace,appSize,highlightShape,highlightSize)
+                "hub"->AppHub(apps,ink,{page="cube"},{launchLeau(c)},{wallpaperReturnPage="hub";page="wallpaper"},{launch(c,it.intent);page="dashboard"},{page="l1vo"},{page="leacher"},{page="settings"},{editingApp=it;page="app_editor"},columns,appHubNavigation,hspace,vspace,appSize,highlightShape,highlightSize)
                 "leacher"->LeacherScreen(apps,ink){page="hub"}
                 "home_settings"->HomeHubSettings(c,ink,{page="dashboard"},{activity?.pickHomeWidget() ?: Unit})
                 "app_editor"->editingApp?.let{AppEditorScreen(it,ink,{editingApp=null;page="hub"}){refresh++;editingApp=null}}
