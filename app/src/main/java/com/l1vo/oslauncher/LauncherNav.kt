@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.sp
 
 @Composable fun L1voLauncherApp(){
     val c=LocalContext.current
+    val activity=c as? MainActivity
     val p=remember{c.getSharedPreferences(PREFS,Context.MODE_PRIVATE)}
     var page by remember{mutableStateOf("cube")}
     var wallpaperReturnPage by remember{mutableStateOf("cube")}
