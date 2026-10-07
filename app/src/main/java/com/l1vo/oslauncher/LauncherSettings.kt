@@ -49,6 +49,7 @@ fun L1voSettings(
         if(section==null){
             listOf(
                 Triple("Accounts","Account and notification options",Icons.Outlined.Person),
+                Triple("Security","App PINs and password-protected apps",Icons.Outlined.Lock),
                 Triple("Appearance","Theme, fonts, colors and wallpaper",Icons.Outlined.Palette),
                 Triple("App presentation","App Hub layout, sizing, highlights and swipe pages",Icons.Outlined.Apps),
                 Triple("Home & Cube","Home Hub and cube controls",Icons.Outlined.Tune),
@@ -58,6 +59,7 @@ fun L1voSettings(
             ).forEach{(t,s,i)->MainSettingRow(t,s,i,ink){section=t}}
         }else when(section){
             "Accounts"->AccountsSettings(p,ink,notif,{notif=it;p.edit().putBoolean(NOTIFICATIONS,it).apply();onChanged()})
+            "Security"->SecuritySettings(p,ink)
             "Appearance"->AppearanceSettings(p,dark,ink,font,fontSize,fontColor,{font=it;onFont(it);onChanged()},{fontSize=it;p.edit().putFloat(FONT_SIZE,it).apply();onChanged()},{fontColor=it;p.edit().putString(FONT_COLOR,it).apply();onChanged()},{onTheme(!dark);onChanged()},onWallpaper)
             "App presentation"->AppPresentationSettings(p,ink,columns,hspace,vspace,appSize,highlight,highlightSize,{columns=it;p.edit().putInt(APPHUB_COLUMNS,it).apply();onChanged()},{hspace=it;p.edit().putFloat(APPHUB_HSPACE,it).apply();onChanged()},{vspace=it;p.edit().putFloat(APPHUB_VSPACE,it).apply();onChanged()},{appSize=it;p.edit().putFloat(APP_SIZE,it).apply();onChanged()},{highlight=it;p.edit().putString(HIGHLIGHT_SHAPE,it).apply();onChanged()},{highlightSize=it;p.edit().putFloat(HIGHLIGHT_SIZE,it).apply();onChanged()})
             "Home & Cube"->HomeCubeSettings(ink,onCube,onWallpaper)
@@ -69,6 +71,19 @@ fun L1voSettings(
 }
 @Composable private fun MainSettingRow(t:String,s:String,i:ImageVector,ink:Color,onClick:()->Unit){Surface(onClick=onClick,color=MaterialTheme.colorScheme.surface.copy(alpha=.96f),shape=RoundedCornerShape(22.dp),modifier=Modifier.fillMaxWidth().padding(vertical=6.dp)){Row(Modifier.padding(18.dp),verticalAlignment=Alignment.CenterVertically){Icon(i,t,tint=L1voGreen,modifier=Modifier.size(28.dp));Spacer(Modifier.width(15.dp));Column(Modifier.weight(1f)){Text(t,color=ink,fontWeight=FontWeight.SemiBold,style=MaterialTheme.typography.titleMedium);Text(s,color=ink.copy(alpha=.62f),style=MaterialTheme.typography.bodySmall)};Icon(Icons.Outlined.ChevronRight,"Open",tint=ink.copy(alpha=.55f))}}}
 @Composable private fun AccountsSettings(p:android.content.SharedPreferences,ink:Color,notif:Boolean,onNotif:(Boolean)->Unit){Text("Account",color=ink,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleLarge);Item("L1vo account",p.getString(ACCOUNT_NAME,"Guest")?:"Guest",Icons.Outlined.Person,ink){};Toggle("Notifications",if(notif)"Enabled"else"Disabled",Icons.Outlined.Notifications,notif,onNotif,ink)}
+@Composable private fun SecuritySettings(p:android.content.SharedPreferences,ink:Color){
+    val context=androidx.compose.ui.platform.LocalContext.current
+    val apps=remember{loadApps(context)}
+    val locked=apps.filter{isAppLocked(context,it.packageName)}
+    Text("App security",color=ink,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleLarge)
+    Spacer(Modifier.height(8.dp))
+    Text("Apps protected by a PIN appear here. Removing the PIN immediately unlocks that app.",color=ink.copy(alpha=.65f),style=MaterialTheme.typography.bodySmall)
+    Spacer(Modifier.height(12.dp))
+    if(locked.isEmpty()) Text("No password-protected apps yet.",color=ink.copy(alpha=.62f))
+    locked.forEach{app->Surface(shape=RoundedCornerShape(18.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.96f),modifier=Modifier.fillMaxWidth().padding(vertical=4.dp)){Row(Modifier.padding(14.dp),verticalAlignment=Alignment.CenterVertically){CustomAppIcon(app,Modifier.size(34.dp));Spacer(Modifier.width(12.dp));Column(Modifier.weight(1f)){Text(appDisplayName(context,app),color=ink,fontWeight=FontWeight.Medium);Text("PIN protected",color=ink.copy(alpha=.6f),style=MaterialTheme.typography.bodySmall)};TextButton(onClick={setAppPin(context,app.packageName,null)}){Text("Remove")}}}}
+    Spacer(Modifier.height(14.dp))
+    Item("Password section","Locked apps are listed above",Icons.Outlined.Password,ink){}
+}
 @Composable private fun AppearanceSettings(p:android.content.SharedPreferences,dark:Boolean,ink:Color,font:String,size:Float,color:String,onFont:(String)->Unit,onSize:(Float)->Unit,onColor:(String)->Unit,onTheme:()->Unit,onWallpaper:()->Unit){Toggle("Dark mode",if(dark)"On — text is white"else"Off",Icons.Outlined.DarkMode,dark,{onTheme()},ink);Item("Wallpaper","Open Wallpaper Studio",Icons.Outlined.Wallpaper,ink,onWallpaper);Choice("Font family",font,listOf("Sans","Serif","Mono","Cursive","Condensed"),ink,onFont);SliderItem("Text size",size,.80f,1.35f,ink,onSize);Choice("Universal font color",color,listOf("auto","green","white","warm"),ink,onColor)}
 @Composable private fun AppPresentationSettings(p:android.content.SharedPreferences,ink:Color,columns:Int,hspace:Float,vspace:Float,appSize:Float,highlight:String,highlightSize:Float,onColumns:(Int)->Unit,onH:(Float)->Unit,onV:(Float)->Unit,onSize:(Float)->Unit,onHighlight:(String)->Unit,onHighlightSize:(Float)->Unit){
     Text("App Hub layout preview",color=ink,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleMedium)
