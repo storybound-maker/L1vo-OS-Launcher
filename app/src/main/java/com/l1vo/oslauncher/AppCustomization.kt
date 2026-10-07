@@ -93,4 +93,3 @@ fun CustomAppIcon(app:LaunchableApp,modifier:Modifier){
     var bitmap by remember(uri){mutableStateOf<android.graphics.Bitmap?>(null)}
     LaunchedEffect(uri){bitmap=uri?.let{withContext(Dispatchers.IO){runCatching{context.contentResolver.openInputStream(Uri.parse(it))?.use{stream->android.graphics.BitmapFactory.decodeStream(stream)}}.getOrNull()}}}
     if(bitmap!=null)Image(bitmap!!.asImageBitmap(),app.label,modifier)else Image(app.icon.asImageBitmap(),app.label,modifier)
-}
