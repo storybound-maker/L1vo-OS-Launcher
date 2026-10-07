@@ -62,7 +62,7 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
                 IconButton(onClick = onWallpaper) { Icon(Icons.Outlined.Wallpaper, "Wallpaper", tint = L1voGreen) }
             }
         }
-        item(span = { GridItemSpan(maxLineSpan) }) { SearchHub(query, { query = it }, ink) }
+        item(span = { GridItemSpan(maxLineSpan) }) { SearchHub(query, { query = it; appPage = 0 }, ink) }
         if (query.isBlank()) {
             item(span = { GridItemSpan(maxLineSpan) }) { L1voAppsPanel(Modifier.fillMaxWidth()) { openL1vo(it) } }
             item(span = { GridItemSpan(maxLineSpan) }) { SystemAppsPanel(Modifier.fillMaxWidth(), apps, onWallpaper) }
