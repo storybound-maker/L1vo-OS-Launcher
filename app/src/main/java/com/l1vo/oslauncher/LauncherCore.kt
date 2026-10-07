@@ -105,9 +105,9 @@ import java.net.URL
     }
     if(moving!=null)Surface(onClick={
         val m=moving!!
-        if(m.startsWith("android:")){val id=m.removePrefix("android:").toIntOrNull();if(id!=null){widgetHost?.deleteAppWidgetId(id);widgetIds=widgetIds.filterNot{it==id};prefs.edit().putStringSet("home_widget_ids",widgetIds.map{it.toString()}.toSet()).apply()}} else if(m in listOf("weather","calendar","notes","maps")){prefs.edit().putBoolean("home_system_\$m",false).apply()}
+        if(m.startsWith("android:")){val id=m.removePrefix("android:").toIntOrNull();if(id!=null){widgetHost?.deleteAppWidgetId(id);widgetIds=widgetIds.filterNot{it==id};prefs.edit().putStringSet("home_widget_ids",widgetIds.map{it.toString()}.toSet()).apply()}} else if(m in listOf("weather","calendar","notes","maps")){prefs.edit().putBoolean("home_system_$m",false).apply()}
         moving=null
-    },color=Color.Red,shape=RoundedCornerShape(18.dp),modifier=Modifier.fillMaxWidth().padding(horizontal=28.dp).height(52.dp)){Box(contentAlignment=Alignment.Center){Text("DROP HERE TO DELETE",color=Color.White,fontWeight=FontWeight.Bold)}}
+    },color=Color.Red,shape=CircleShape,modifier=Modifier.fillMaxWidth().wrapContentHeight().padding(bottom=10.dp)){Box(Modifier.size(58.dp),contentAlignment=Alignment.Center){Text("×",color=Color.White,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.headlineSmall)}}
     if(showNote){var draft by remember(note){mutableStateOf(note)};AlertDialog(onDismissRequest={showNote=false},title={Text("Quick note")},text={OutlinedTextField(value=draft,onValueChange={draft=it},modifier=Modifier.fillMaxWidth(),minLines=4)},confirmButton={TextButton(onClick={note=draft;prefs.edit().putString("home_note",draft).apply();showNote=false}){Text("Save")}},dismissButton={TextButton(onClick={showNote=false}){Text("Cancel")}})}
 }
 
