@@ -37,7 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: () -> Unit, onWallpaper: () -> Unit, onOpen: (LaunchableApp) -> Unit, onL1vo: () -> Unit, onLeacher: () -> Unit, onStem: () -> Unit, columns: Int = 4, hspace: Float = 10f, vspace: Float = 14f, appSize: Float = 1f, highlightShape: String = "round", highlightSize: Float = 1f) {
+fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: () -> Unit, onWallpaper: () -> Unit, onOpen: (LaunchableApp) -> Unit, onL1vo: () -> Unit, onLeacher: () -> Unit, onStem: () -> Unit, columns: Int = 4, navigation: String = "scroll", hspace: Float = 10f, vspace: Float = 14f, appSize: Float = 1f, highlightShape: String = "round", highlightSize: Float = 1f) {
     val context = LocalContext.current
     var query by rememberSaveable { mutableStateOf("") }
     var favoriteApps by remember(apps) { mutableStateOf(loadFavoriteApps(context, apps)) }
@@ -54,7 +54,7 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
             else -> apps.firstOrNull { it.label.equals(label, true) }?.let(::openApp) ?: Toast.makeText(context, "$label is not installed yet", Toast.LENGTH_SHORT).show()
         }
     }
-    LazyVerticalGrid(columns = GridCells.Fixed(columns.coerceIn(3,6)), modifier = Modifier.fillMaxSize().pointerInput(filteredApps.size) { detectHorizontalDragGestures(onHorizontalDrag = { _, amount -> dragTotal += amount }, onDragEnd = { if (dragTotal < -70f) appPage = (appPage + 1).coerceAtMost(maxOf(0,(filteredApps.size-1)/20)); else if (dragTotal > 70f) appPage = (appPage - 1).coerceAtLeast(0); dragTotal = 0f }) }, contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 16.dp + WindowInsets.statusBars.asPaddingValues().calculateTopPadding(), bottom = 18.dp), verticalArrangement = Arrangement.spacedBy(vspace.dp), horizontalArrangement = Arrangement.spacedBy(hspace.dp)) {
+    LazyVerticalGrid(columns = GridCells.Fixed(columns.coerceIn(3,6)), modifier = Modifier.fillMaxSize().then(if(navigation=="swipe") Modifier.pointerInput(filteredApps.size) { detectHorizontalDragGestures(onHorizontalDrag = { _, amount -> dragTotal += amount }, onDragEnd = { if (dragTotal < -70f) appPage = (appPage + 1).coerceAtMost(maxOf(0,(filteredApps.size-1)/20)); else if (dragTotal > 70f) appPage = (appPage - 1).coerceAtLeast(0); dragTotal = 0f }) } else Modifier), contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 16.dp + WindowInsets.statusBars.asPaddingValues().calculateTopPadding(), bottom = 18.dp), verticalArrangement = Arrangement.spacedBy(vspace.dp), horizontalArrangement = Arrangement.spacedBy(hspace.dp)) {
         item(span = { GridItemSpan(maxLineSpan) }) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack, modifier = Modifier.offset(y = 8.dp).size(56.dp)) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back", tint = ink) }
@@ -70,9 +70,7 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
             items(8) { index -> val app = favoriteApps.getOrNull(index); FavoriteSlot(app, ink, appSize, highlightShape, highlightSize) { if (app != null) openApp(app) } }
             item(span = { GridItemSpan(maxLineSpan) }) { SectionHeading("ALL APPS", "Every launchable app on this device", ink) }
         } else item(span = { GridItemSpan(maxLineSpan) }) { SectionHeading("SEARCH RESULTS", "Matching installed apps", ink) }
-        item(span = { GridItemSpan(maxLineSpan) }) { Text("PAGE ${appPage + 1}/${maxOf(1,(filteredApps.size+19)/20)} • SWIPE LEFT / RIGHT", color = ink.copy(alpha=.62f), style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top=4.dp)) }
-        val visibleApps = filteredApps.chunked(20).getOrNull(appPage) ?: emptyList()
-        items(visibleApps, key = { it.packageName }, contentType = { "app" }) { app -> AppIcon(app, ::openApp, ink, appSize, highlightShape, highlightSize) }
+        if(navigation=="swipe"){ item(span = { GridItemSpan(maxLineSpan) }) { Text("PAGE ${appPage + 1}/${maxOf(1,(filteredApps.size+19)/20)} • SWIPE LEFT / RIGHT", color = ink.copy(alpha=.62f), style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top=4.dp)) }; val visibleApps = filteredApps.chunked(20).getOrNull(appPage) ?: emptyList(); items(visibleApps, key = { it.packageName }, contentType = { "app" }) { app -> AppIcon(app, ::openApp, ink, appSize, highlightShape, highlightSize) } } else { items(filteredApps, key = { it.packageName }, contentType = { "app" }) { app -> AppIcon(app, ::openApp, ink, appSize, highlightShape, highlightSize) } }
         
     }
 }
