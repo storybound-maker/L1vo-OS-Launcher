@@ -81,9 +81,9 @@ fun WallpaperStudio(
             if(saved.isNotEmpty()){items=saved;onPlaylist(saved,target ?: "main",interval)}
         }
     }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)){
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal=20.dp).padding(top=34.dp+WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),bottom=20.dp)){
         Row(verticalAlignment=Alignment.CenterVertically){
-            IconButton(onClick={if(target==null)onBack()else target=null},modifier=Modifier.offset(y=8.dp).size(56.dp)){Icon(Icons.AutoMirrored.Outlined.ArrowBack,"Back",tint=ink)}
+            IconButton(onClick={if(target==null)onBack()else target=null},modifier=Modifier.size(56.dp)){Icon(Icons.AutoMirrored.Outlined.ArrowBack,"Back",tint=ink)}
             Column(Modifier.weight(1f)){Text("Wallpaper",color=ink,style=MaterialTheme.typography.headlineMedium);Text(if(target==null)"Choose a space" else target!!.uppercase()+" WALLPAPER",color=L1voGreen)}
         }
         Spacer(Modifier.height(18.dp))
