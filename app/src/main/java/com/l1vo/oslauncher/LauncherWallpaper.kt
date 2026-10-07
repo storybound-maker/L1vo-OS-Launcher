@@ -58,41 +58,85 @@ private fun drawableToWallpaperBitmap(d:Drawable):Bitmap=d.toBitmap(1080,1920,Bi
 
 @Composable
 fun WallpaperStudio(
-    ink:Color,onBack:()->Unit,onSave:(String,String)->Unit,onPlaylist:(List<String>,String)->Unit,
-    onLiveWallpaper:()->Unit,playlist:List<String>,intervalSeconds:Long,playlists:Map<String,List<String>> = emptyMap()
+    ink:Color,onBack:()->Unit,onSave:(String,String)->Unit,onPlaylist:(List<String>,String,Long)->Unit,
+    onLiveWallpaper:()->Unit,playlist:List<String>,intervalSeconds:Long,
+    playlists:Map<String,List<String>> = emptyMap(),intervals:Map<String,Long> = emptyMap()
 ){
     val context=LocalContext.current
-    var target by rememberSaveable{mutableStateOf("all")}
+    var target by rememberSaveable{mutableStateOf<String?>(null)}
     var interval by rememberSaveable{mutableLongStateOf(intervalSeconds)}
     var items by remember(playlist){mutableStateOf(playlist)}
-    LaunchedEffect(target,playlists){items=playlists[target]?:playlist}
-    val picker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){u->if(u!=null){runCatching{context.contentResolver.takePersistableUriPermission(u,Intent.FLAG_GRANT_READ_URI_PERMISSION)};onSave(target,u.toString())}}
-    val multiPicker=rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()){uris->if(uris.isNotEmpty()){val saved=uris.mapNotNull{u->runCatching{context.contentResolver.takePersistableUriPermission(u,Intent.FLAG_GRANT_READ_URI_PERMISSION)};u.toString()};if(saved.isNotEmpty()){items=saved;onPlaylist(saved,target)}}}
+    LaunchedEffect(target,playlists,intervals,intervalSeconds){
+        val t=target ?: return@LaunchedEffect
+        items=playlists[t]?:emptyList()
+        interval=intervals[t]?:intervalSeconds
+    }
+    val picker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){u->
+        if(u!=null){runCatching{context.contentResolver.takePersistableUriPermission(u,Intent.FLAG_GRANT_READ_URI_PERMISSION)};onSave(target ?: "main",u.toString())}
+    }
+    val multiPicker=rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()){uris->
+        if(uris.isNotEmpty()){
+            val saved=uris.mapNotNull{u->runCatching{context.contentResolver.takePersistableUriPermission(u,Intent.FLAG_GRANT_READ_URI_PERMISSION)};u.toString()}
+            if(saved.isNotEmpty()){items=saved;onPlaylist(saved,target ?: "main",interval)}
+        }
+    }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)){
-        Row(verticalAlignment=Alignment.CenterVertically){IconButton(onClick=onBack,modifier=Modifier.offset(y=8.dp).size(56.dp)){Icon(Icons.AutoMirrored.Outlined.ArrowBack,"Back",tint=ink)};Column(Modifier.weight(1f)){Text("Wallpaper",color=ink,style=MaterialTheme.typography.headlineMedium);Text("Wallpaper Studio",color=L1voGreen)}}
+        Row(verticalAlignment=Alignment.CenterVertically){
+            IconButton(onClick={if(target==null)onBack()else target=null},modifier=Modifier.offset(y=8.dp).size(56.dp)){Icon(Icons.AutoMirrored.Outlined.ArrowBack,"Back",tint=ink)}
+            Column(Modifier.weight(1f)){Text("Wallpaper",color=ink,style=MaterialTheme.typography.headlineMedium);Text(if(target==null)"Choose a space" else target!!.uppercase()+" WALLPAPER",color=L1voGreen)}
+        }
         Spacer(Modifier.height(18.dp))
-        Card(colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface.copy(alpha=.96f)),shape=RoundedCornerShape(26.dp),modifier=Modifier.fillMaxWidth()){Column(Modifier.padding(20.dp)){
-            Text("Where should this wallpaper appear?",color=ink,fontWeight=FontWeight.SemiBold)
+        if(target==null){
+            Text("Each space has its own wallpaper and playlist.",color=ink.copy(alpha=.72f))
+            Spacer(Modifier.height(12.dp))
+            listOf("all" to "All","main" to "Main","home" to "Home Hub","hub" to "App Hub").forEach{(id,label)->
+                val list=if(id=="all")playlists["main"] else playlists[id]
+                val preview=list?.firstOrNull()
+                Surface(onClick={target=id;interval=intervals[id]?:intervalSeconds;items=list?:emptyList()},shape=RoundedCornerShape(24.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.96f),shadowElevation=3.dp,modifier=Modifier.fillMaxWidth().padding(vertical=6.dp)){
+                    Row(Modifier.height(108.dp),verticalAlignment=Alignment.CenterVertically){
+                        WallpaperThumb(preview,Modifier.size(92.dp).padding(8.dp))
+                        Column(Modifier.weight(1f)){Text(label,color=ink,fontWeight=FontWeight.SemiBold);Text(if(preview==null)"No wallpaper selected" else "Current wallpaper",color=ink.copy(alpha=.62f),style=MaterialTheme.typography.bodySmall);Text("Playlist: \${list?.size?:0} • \${formatInterval(intervals[id]?:intervalSeconds)}",color=ink.copy(alpha=.55f),style=MaterialTheme.typography.bodySmall)}
+                        Icon(Icons.Outlined.ChevronRight,"Open",tint=L1voGreen,modifier=Modifier.padding(14.dp))
+                    }
+                }
+            }
+        }else{
+            WallpaperThumb(items.firstOrNull(),Modifier.fillMaxWidth().height(190.dp))
+            Spacer(Modifier.height(12.dp))
+            Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                Button(onClick={picker.launch(arrayOf("image/*","video/*"))},modifier=Modifier.weight(1f)){Text("Choose one")}
+                OutlinedButton(onClick={multiPicker.launch(arrayOf("image/*","video/*"))},modifier=Modifier.weight(1f)){Text("Add playlist")}
+            }
             Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){listOf("all" to "All","main" to "Main","home" to "Home Hub","hub" to "App Hub").forEach{(id,label)->FilterChip(selected=target==id,onClick={target=id},label={Text(label)},modifier=Modifier.weight(1f))}}
-        }}
-        Spacer(Modifier.height(12.dp))
-        Card(colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface.copy(alpha=.96f)),shape=RoundedCornerShape(26.dp),modifier=Modifier.fillMaxWidth()){Column(Modifier.padding(20.dp),horizontalAlignment=Alignment.CenterHorizontally){
-            Icon(Icons.Outlined.Collections,"Photos",tint=L1voGreen,modifier=Modifier.size(44.dp));Spacer(Modifier.height(10.dp));Text("Choose wallpaper",color=ink,style=MaterialTheme.typography.titleLarge)
-            Text("Images and videos can be used in your rotating playlist.",color=ink.copy(alpha=.62f),textAlign=TextAlign.Center)
-            Spacer(Modifier.height(14.dp));Button(onClick={picker.launch(arrayOf("image/*","video/*"))}){Text("Choose one")}
-            Spacer(Modifier.height(7.dp));OutlinedButton(onClick={multiPicker.launch(arrayOf("image/*","video/*"))}){Text("Add to playlist")}
-            Spacer(Modifier.height(7.dp));OutlinedButton(onClick=onLiveWallpaper){Icon(Icons.Outlined.Movie,"Live wallpaper",modifier=Modifier.size(18.dp));Spacer(Modifier.width(7.dp));Text("Choose phone live wallpaper")}
-        }}
-        Spacer(Modifier.height(12.dp))
-        Card(colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface.copy(alpha=.96f)),shape=RoundedCornerShape(26.dp),modifier=Modifier.fillMaxWidth()){Column(Modifier.padding(20.dp)){
-            Row(verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text("Playlist file",color=ink,style=MaterialTheme.typography.titleMedium);Text(if(items.isEmpty())"No playlist selected" else "${items.size} items",color=ink.copy(alpha=.62f),style=MaterialTheme.typography.bodySmall)};Icon(Icons.Outlined.FolderOpen,"Playlist",tint=L1voGreen)}
-            Spacer(Modifier.height(10.dp))
-            items.forEachIndexed{index,uri->Row(Modifier.fillMaxWidth().padding(vertical=4.dp),verticalAlignment=Alignment.CenterVertically){Surface(shape=CircleShape,color=L1voGreen.copy(alpha=.12f),modifier=Modifier.size(30.dp)){Box(contentAlignment=Alignment.Center){Text("${index+1}",color=L1voDeepGreen,style=MaterialTheme.typography.labelSmall)}};Spacer(Modifier.width(9.dp));Text(Uri.parse(uri).lastPathSegment?:"Wallpaper ${index+1}",color=ink,modifier=Modifier.weight(1f),maxLines=1);IconButton(onClick={items=items.toMutableList().also{it.removeAt(index)};onPlaylist(items,target)}){Icon(Icons.Outlined.Close,"Remove",tint=ink.copy(alpha=.65f))}}}
-            Spacer(Modifier.height(8.dp));Text("Change every ${formatInterval(interval)}",color=ink,fontWeight=FontWeight.Medium)
-            Slider(value=interval.toFloat(),onValueChange={interval=it.toLong().coerceIn(10,86400)},valueRange=10f..86400f,steps=95,onValueChangeFinished={if(items.isNotEmpty())onPlaylist(items,target)})
-            Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){listOf(60L to "1m",300L to "5m",1800L to "30m",3600L to "1h",21600L to "6h").forEach{(s,label)->FilterChip(selected=interval==s,onClick={interval=s;if(items.isNotEmpty())onPlaylist(items,target)},label={Text(label)},modifier=Modifier.weight(1f))}}
-        }}
+            OutlinedButton(onClick=onLiveWallpaper,modifier=Modifier.fillMaxWidth()){Icon(Icons.Outlined.Movie,"Live wallpaper",modifier=Modifier.size(18.dp));Spacer(Modifier.width(7.dp));Text("Choose phone live wallpaper")}
+            Spacer(Modifier.height(12.dp))
+            Card(colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface.copy(alpha=.96f)),shape=RoundedCornerShape(24.dp),modifier=Modifier.fillMaxWidth()){
+                Column(Modifier.padding(16.dp)){
+                    Text("Playlist",color=ink,style=MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.height(8.dp))
+                    if(items.isEmpty()) Text("No playlist selected yet.",color=ink.copy(alpha=.62f))
+                    items.forEachIndexed{index,uri->
+                        Row(Modifier.fillMaxWidth().padding(vertical=5.dp),verticalAlignment=Alignment.CenterVertically){
+                            WallpaperThumb(uri,Modifier.size(56.dp))
+                            Spacer(Modifier.width(9.dp))
+                            Column(Modifier.weight(1f)){Text(Uri.parse(uri).lastPathSegment?:"Wallpaper \${index+1}",color=ink,maxLines=1);Text("Item \${index+1}",color=ink.copy(alpha=.55f),style=MaterialTheme.typography.labelSmall)}
+                            IconButton(onClick={items=items.toMutableList().also{it.removeAt(index)};onPlaylist(items,target!!,interval)}){Icon(Icons.Outlined.Close,"Remove",tint=ink.copy(alpha=.65f))}
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Text("Change every \${formatInterval(interval)}",color=ink,fontWeight=FontWeight.Medium)
+                    Slider(value=interval.toFloat(),onValueChange={interval=it.toLong().coerceIn(10,86400)},valueRange=10f..86400f,steps=95,onValueChangeFinished={onPlaylist(items,target!!,interval)})
+                    Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){listOf(60L to "1m",300L to "5m",1800L to "30m",3600L to "1h",21600L to "6h").forEach{(v,label)->FilterChip(selected=interval==v,onClick={interval=v;onPlaylist(items,target!!,interval)},label={Text(label)},modifier=Modifier.weight(1f))}}
+                }
+            }
+        }
     }
 }
+@Composable private fun WallpaperThumb(uriString:String?,modifier:Modifier){
+    val context=LocalContext.current
+    var bitmap by remember(uriString){mutableStateOf<Bitmap?>(null)}
+    LaunchedEffect(uriString){bitmap=uriString?.let{u->withContext(kotlinx.coroutines.Dispatchers.IO){runCatching{val uri=Uri.parse(u);val type=context.contentResolver.getType(uri);if(type?.startsWith("video/")==true){val mmr=android.media.MediaMetadataRetriever();mmr.setDataSource(context,uri);val b=mmr.frameAtTime;mmr.release();b}else context.contentResolver.openInputStream(uri)?.use{android.graphics.BitmapFactory.decodeStream(it)}}.getOrNull()}}}
+    Surface(shape=RoundedCornerShape(16.dp),color=Color.Black.copy(alpha=.08f),modifier=modifier){if(bitmap!=null)Image(bitmap!!.asImageBitmap(),null,Modifier.fillMaxSize(),contentScale=ContentScale.Crop)else Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Icon(Icons.Outlined.Image,"Wallpaper",tint=L1voGreen)}}
+}
+
 private fun formatInterval(seconds:Long):String=when{seconds<60->"${seconds}s";seconds%3600L==0L->"${seconds/3600L}h";else->"${seconds/60L}m"}
