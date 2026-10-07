@@ -153,7 +153,7 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
 @Composable private fun CategoryPanel(modifier: Modifier, title: String, icon: ImageVector, content: @Composable ColumnScope.() -> Unit) {
     Surface(
         modifier = modifier,
-        color = L1voPanel.copy(alpha = .96f),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = .96f),
         shape = RoundedCornerShape(26.dp),
         shadowElevation = 5.dp
     ) {
@@ -259,4 +259,4 @@ private fun loadFavoriteApps(context: Context, apps: List<LaunchableApp>): List<
     }
 }
 
-@Composable private fun Feature(t: String, s: String, i: ImageVector, ink: Color, onClick: () -> Unit) { Surface(onClick = onClick, color = L1voPanel.copy(alpha = .96f), shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) { Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) { Icon(i, t, tint = L1voDeepGreen, modifier = Modifier.size(28.dp)); Spacer(Modifier.width(15.dp)); Column { Text(t, color = ink, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge); Text(s, color = ink.copy(alpha = .78f), fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodySmall) } } } }
+@Composable private fun Feature(t: String, s: String, i: ImageVector, ink: Color, onClick: () -> Unit) { Surface(onClick = onClick, color = MaterialTheme.colorScheme.surface.copy(alpha = .96f), shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) { Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) { Icon(i, t, tint = L1voDeepGreen, modifier = Modifier.size(28.dp)); Spacer(Modifier.width(15.dp)); Column { Text(t, color = ink, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge); Text(s, color = ink.copy(alpha = .78f), fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodySmall) } } } }
