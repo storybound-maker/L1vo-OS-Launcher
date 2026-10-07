@@ -2,6 +2,7 @@ package com.l1vo.oslauncher
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.provider.ContactsContract
 import android.provider.Settings
 import android.widget.Toast
@@ -13,6 +14,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.*
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.pointerInput
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -37,6 +40,8 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
     val context = LocalContext.current
     var query by rememberSaveable { mutableStateOf("") }
     var favoriteApps by remember(apps) { mutableStateOf(loadFavoriteApps(context, apps)) }
+    var appPage by rememberSaveable { mutableIntStateOf(0) }
+    var dragTotal by remember { mutableFloatStateOf(0f) }
     val filteredApps = remember(apps, query) { val q = query.trim().lowercase(); if (q.isEmpty()) apps else apps.filter { it.label.lowercase().contains(q) } }
     fun openApp(app: LaunchableApp) { rememberAppUse(context, app.packageName); favoriteApps = loadFavoriteApps(context, apps); onOpen(app) }
     fun openL1vo(label: String) {
@@ -48,7 +53,7 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
             else -> apps.firstOrNull { it.label.equals(label, true) }?.let(::openApp) ?: Toast.makeText(context, "$label is not installed yet", Toast.LENGTH_SHORT).show()
         }
     }
-    LazyVerticalGrid(columns = GridCells.Fixed(columns.coerceIn(3,6)), modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 16.dp + WindowInsets.statusBars.asPaddingValues().calculateTopPadding(), bottom = 18.dp), verticalArrangement = Arrangement.spacedBy(vspace.dp), horizontalArrangement = Arrangement.spacedBy(hspace.dp)) {
+    LazyVerticalGrid(columns = GridCells.Fixed(columns.coerceIn(3,6)), modifier = Modifier.fillMaxSize().pointerInput(filteredApps.size) { detectHorizontalDragGestures(onHorizontalDrag = { _, amount -> dragTotal += amount }, onDragEnd = { if (dragTotal < -70f) appPage = (appPage + 1).coerceAtMost(maxOf(0,(filteredApps.size-1)/20)); else if (dragTotal > 70f) appPage = (appPage - 1).coerceAtLeast(0); dragTotal = 0f }) }, contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 16.dp + WindowInsets.statusBars.asPaddingValues().calculateTopPadding(), bottom = 18.dp), verticalArrangement = Arrangement.spacedBy(vspace.dp), horizontalArrangement = Arrangement.spacedBy(hspace.dp)) {
         item(span = { GridItemSpan(maxLineSpan) }) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack, modifier = Modifier.offset(y = 8.dp).size(56.dp)) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back", tint = ink) }
@@ -64,7 +69,9 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
             items(8) { index -> val app = favoriteApps.getOrNull(index); FavoriteSlot(app, ink, appSize, highlightShape, highlightSize) { if (app != null) openApp(app) } }
             item(span = { GridItemSpan(maxLineSpan) }) { SectionHeading("ALL APPS", "Every launchable app on this device", ink) }
         } else item(span = { GridItemSpan(maxLineSpan) }) { SectionHeading("SEARCH RESULTS", "Matching installed apps", ink) }
-        items(filteredApps, key = { it.packageName }, contentType = { "app" }) { app -> AppIcon(app, ::openApp, ink, appSize, highlightShape, highlightSize) }
+        item(span = { GridItemSpan(maxLineSpan) }) { Text("PAGE ${appPage + 1}/${maxOf(1,(filteredApps.size+19)/20)} • SWIPE LEFT / RIGHT", color = ink.copy(alpha=.62f), style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top=4.dp)) }
+        val visibleApps = filteredApps.chunked(20).getOrNull(appPage) ?: emptyList()
+        items(visibleApps, key = { it.packageName }, contentType = { "app" }) { app -> AppIcon(app, ::openApp, ink, appSize, highlightShape, highlightSize) }
         
     }
 }
@@ -99,56 +106,23 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
 
 @Composable private fun SystemAppsPanel(modifier: Modifier, apps: List<LaunchableApp>, onWallpaper: () -> Unit) {
     val context = LocalContext.current
-    val systemApps = remember(apps) {
-        apps.filter {
-            it.packageName.startsWith("com.android.") ||
-            it.packageName.startsWith("com.google.android.")
-        }.filterNot {
-            it.packageName == context.packageName
-        }.filterNot {
-            it.label.equals("Settings", true) ||
-            it.label.equals("Phone", true) ||
-            it.label.equals("Messages", true) ||
-            it.label.equals("Contacts", true)
-        }.sortedBy { it.label.lowercase() }
-    }
-
-    val entries = buildList<Pair<String, () -> Unit>> {
-        add("SETTINGS" to { launch(context, Intent(Settings.ACTION_SETTINGS)) })
-        add("PHONE" to { launch(context, Intent(Intent.ACTION_DIAL)) })
-        add("MESSAGES" to { launchMessages(context) })
-        add("CONTACTS" to {
-            launch(context, Intent(Intent.ACTION_VIEW, ContactsContract.Contacts.CONTENT_URI))
-        })
-        systemApps.take(4).forEach { app ->
-            add(app.label to {
-                rememberAppUse(context, app.packageName)
-                launch(context, app.intent)
-            })
-        }
-        add("WALLPAPER" to onWallpaper)
-    }
-
-    CategoryPanel(modifier, "SYSTEM", Icons.Outlined.Settings) {
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(end = 2.dp)
-        ) {
-            items(entries, key = { it.first }) { (label, action) ->
-                val icon = when (label.uppercase()) {
-                    "SETTINGS" -> Icons.Outlined.Settings
-                    "PHONE" -> Icons.Outlined.Call
-                    "MESSAGES" -> Icons.Outlined.Message
-                    "CONTACTS" -> Icons.Outlined.Contacts
-                    "WALLPAPER" -> Icons.Outlined.Wallpaper
-                    else -> Icons.Outlined.Android
-                }
-
-                MiniApp(label, icon, Modifier.width(104.dp), action)
-            }
+    val pm = context.packageManager
+    val systemApps = remember(apps) { apps.filter { it.packageName.startsWith("com.android.") || it.packageName.startsWith("com.google.android.") }.filterNot { it.packageName == context.packageName }.filterNot { it.label.equals("Settings",true)||it.label.equals("Phone",true)||it.label.equals("Messages",true)||it.label.equals("Contacts",true) }.sortedBy { it.label.lowercase() } }
+    val builtIns=listOf(
+        "SETTINGS" to Intent(Settings.ACTION_SETTINGS),
+        "PHONE" to Intent(Intent.ACTION_DIAL),
+        "MESSAGES" to Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_MESSAGING),
+        "CONTACTS" to Intent(Intent.ACTION_VIEW,ContactsContract.Contacts.CONTENT_URI)
+    )
+    CategoryPanel(modifier,"SYSTEM",Icons.Outlined.Settings){
+        LazyRow(horizontalArrangement=Arrangement.spacedBy(8.dp),contentPadding=PaddingValues(end=2.dp)){
+            items(builtIns,key={it.first}){(label,intent)->MiniApp(label,Icons.Outlined.Android,Modifier.width(104.dp),{launch(context,intent)},resolveIntentIcon(context,intent))}
+            items(systemApps.take(8),key={it.packageName}){app->MiniApp(app.label,Icons.Outlined.Android,Modifier.width(104.dp),{rememberAppUse(context,app.packageName);launch(context,app.intent)},app.icon)}
+            item{MiniApp("WALLPAPER",Icons.Outlined.Wallpaper,Modifier.width(104.dp),onWallpaper)}
         }
     }
 }
+private fun resolveIntentIcon(context:Context,intent:Intent):Bitmap?=runCatching{context.packageManager.resolveActivity(intent,0)?.activityInfo?.loadIcon(context.packageManager)?.let{drawableToBitmap(it,64)}}.getOrNull()
 
 @Composable private fun CategoryPanel(modifier: Modifier, title: String, icon: ImageVector, content: @Composable ColumnScope.() -> Unit) {
     Surface(
@@ -186,41 +160,11 @@ fun AppHub(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit, onLeau: ()
     }
 }
 
-@Composable private fun MiniApp(
-    label: String,
-    icon: ImageVector,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    Surface(
-        onClick = onClick,
-        color = MaterialTheme.colorScheme.surface.copy(alpha=.92f),
-        shape = RoundedCornerShape(18.dp),
-        shadowElevation = 2.dp,
-        modifier = modifier.height(78.dp)
-    ) {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(7.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                icon,
-                label,
-                tint = L1voDeepGreen,
-                modifier = Modifier.size(27.dp)
-            )
-            Spacer(Modifier.height(5.dp))
-            Text(
-                label,
-                color = L1voInk,
-                fontWeight = FontWeight.SemiBold,
-                style = MaterialTheme.typography.labelSmall,
-                maxLines = 2,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-            )
+@Composable private fun MiniApp(label:String,icon:ImageVector,modifier:Modifier=Modifier,onClick:()->Unit,bitmap:Bitmap?=null){
+    Surface(onClick=onClick,color=MaterialTheme.colorScheme.surface.copy(alpha=.92f),shape=RoundedCornerShape(18.dp),shadowElevation=2.dp,modifier=modifier.height(78.dp)){
+        Column(Modifier.fillMaxSize().padding(7.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center){
+            if(bitmap!=null)Image(bitmap.asImageBitmap(),label,Modifier.size(27.dp),contentScale=ContentScale.Fit) else Icon(icon,label,tint=L1voDeepGreen,modifier=Modifier.size(27.dp))
+            Spacer(Modifier.height(5.dp));Text(label,color=MaterialTheme.colorScheme.onSurface,fontWeight=FontWeight.SemiBold,style=MaterialTheme.typography.labelSmall,maxLines=2,textAlign=androidx.compose.ui.text.style.TextAlign.Center)
         }
     }
 }
