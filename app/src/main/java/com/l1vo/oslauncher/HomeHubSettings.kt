@@ -34,4 +34,3 @@ fun HomeHubSettings(context:Context,ink:Color,onBack:()->Unit,onPickWidget:()->U
         Text("Drag & delete",color=ink,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleMedium)
         Text("Long-press a widget on Home Hub to move it. While moving, use the red DELETE area at the bottom to remove it.",color=ink.copy(alpha=.65f),style=MaterialTheme.typography.bodySmall)
     }
-}
