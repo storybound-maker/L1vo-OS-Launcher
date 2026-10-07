@@ -49,8 +49,8 @@ import androidx.compose.ui.unit.sp
     val highlightShape=p.getString(HIGHLIGHT_SHAPE,"round")?:"round"
     val highlightSize=p.getFloat(HIGHLIGHT_SIZE,1f)
     MaterialTheme(
-        colorScheme=if(dark) darkColorScheme(primary=L1voGreen,onPrimary=Color.White,secondary=L1voGreen,onSecondary=Color.White,background=L1voDark,surface=Color(0xFF18201B),onBackground=ink,onSurface=ink,surfaceVariant=Color(0xFF263129),onSurfaceVariant=Color(0xFFC7D2C9))
-        else lightColorScheme(primary=L1voDeepGreen,onPrimary=Color.White,secondary=L1voGreen,onSecondary=Color.White,background=L1voPanel,surface=L1voPanel,onBackground=ink,onSurface=ink,surfaceVariant=Color(0xFFE7E9DF),onSurfaceVariant=L1voInk),
+        colorScheme=if(dark) darkColorScheme(primary=L1voGreen,onPrimary=Color.White,secondary=L1voGreen,onSecondary=Color.White,background=L1voDark,surface=Color(0xFF18201B),onBackground=ink,onSurface=ink,surfaceVariant=Color(0xFF263129),onSurfaceVariant=ink)
+        else lightColorScheme(primary=L1voDeepGreen,onPrimary=Color.White,secondary=L1voGreen,onSecondary=Color.White,background=L1voPanel,surface=L1voPanel,onBackground=ink,onSurface=ink,surfaceVariant=Color(0xFFE7E9DF),onSurfaceVariant=ink),
         typography=MaterialTheme.typography.copy(
             bodyLarge=MaterialTheme.typography.bodyLarge.copy(fontFamily=font,fontWeight=FontWeight.Medium,fontSize=MaterialTheme.typography.bodyLarge.fontSize*fontScale),
             bodyMedium=MaterialTheme.typography.bodyMedium.copy(fontFamily=font,fontWeight=FontWeight.Medium,fontSize=MaterialTheme.typography.bodyMedium.fontSize*fontScale),
