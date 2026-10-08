@@ -66,6 +66,7 @@ fun clearAppCustomization(c: Context, pkg: String) {
         .remove(appPref(pkg, "color"))
         .remove(appPref(pkg, "icon"))
         .remove(appPref(pkg, "sound"))
+        .remove(appPref(pkg, "skin"))
         .apply()
 }
 
@@ -244,6 +245,7 @@ fun AppEditorScreen(
     }
     var iconUri by remember { mutableStateOf(appIconUri(context, app.packageName)) }
     var soundUri by remember { mutableStateOf(appNotificationSound(context, app.packageName)) }
+    var selectedSkin by remember { mutableStateOf(appSkin(context, app.packageName)?.id) }
 
     val iconPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()
@@ -358,6 +360,45 @@ fun AppEditorScreen(
                     Text(if (iconUri == null) "Choose custom icon" else "Change custom icon")
                 }
 
+                Text("Exclusive skin", color = ink, fontWeight = FontWeight.Medium)
+                Text("Premium skins are app-specific and will use the same skin everywhere in L1VO.", color = ink.copy(alpha = .62f), style = MaterialTheme.typography.bodySmall)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        skinsForPackage(app.packageName).take(2).forEach { skin ->
+                            Surface(
+                                onClick = { selectedSkin = if (selectedSkin == skin.id) null else skin.id },
+                                shape = RoundedCornerShape(18.dp),
+                                color = if (selectedSkin == skin.id) L1voGreen.copy(alpha = .18f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .65f),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    PremiumSkinPreview(app, skin, Modifier.size(62.dp))
+                                    Spacer(Modifier.height(6.dp))
+                                    Text(skin.name, color = ink, style = MaterialTheme.typography.labelMedium)
+                                    Text("PREMIUM", color = L1voGreen, style = MaterialTheme.typography.labelSmall)
+                                }
+                            }
+                        }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        skinsForPackage(app.packageName).drop(2).take(2).forEach { skin ->
+                            Surface(
+                                onClick = { selectedSkin = if (selectedSkin == skin.id) null else skin.id },
+                                shape = RoundedCornerShape(18.dp),
+                                color = if (selectedSkin == skin.id) L1voGreen.copy(alpha = .18f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .65f),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    PremiumSkinPreview(app, skin, Modifier.size(62.dp))
+                                    Spacer(Modifier.height(6.dp))
+                                    Text(skin.name, color = ink, style = MaterialTheme.typography.labelMedium)
+                                    Text("PREMIUM", color = L1voGreen, style = MaterialTheme.typography.labelSmall)
+                                }
+                            }
+                        }
+                    }
+                }
+
                 OutlinedButton(
                     onClick = { soundPicker.launch(arrayOf("audio/*")) },
                     modifier = Modifier.fillMaxWidth()
@@ -377,6 +418,7 @@ fun AppEditorScreen(
                     OutlinedButton(
                         onClick = {
                             clearAppCustomization(context, app.packageName)
+                            setAppSkin(context, app.packageName, selectedSkin)
                             onSaved()
                             onBack()
                         },
@@ -442,7 +484,12 @@ fun CustomAppIcon(app: LaunchableApp, modifier: Modifier) {
         }
     }
 
-    if (bitmap != null) {
+    val skin = appSkin(context, app.packageName)
+    if (skin != null) {
+        val source = bitmap ?: app.icon
+        val skinned = remember(skin.id, source) { skinBitmap(source, skin, 128) }
+        Image(skinned.asImageBitmap(), app.label, modifier)
+    } else if (bitmap != null) {
         Image(bitmap!!.asImageBitmap(), app.label, modifier)
     } else {
         Image(app.icon.asImageBitmap(), app.label, modifier)
