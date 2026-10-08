@@ -57,6 +57,7 @@ import java.net.URL
 
 @OptIn(ExperimentalFoundationApi::class) @Composable private fun CubeTile(s:QuickSlot,apps:List<LaunchableApp>,m:Modifier,c:Context,onHome:()->Unit,onEdit:(String)->Unit,ink:Color){val app=apps.firstOrNull{it.packageName==s.packageName};val icon=when(s.kind){SlotKind.HOME->Icons.Outlined.Home;SlotKind.SETTINGS->Icons.Outlined.Settings;SlotKind.GALLERY->Icons.Outlined.Collections;SlotKind.CALLS->Icons.Outlined.Call;SlotKind.APP->Icons.Outlined.Apps};val appColor=if(app==null)MaterialTheme.colorScheme.onSurface else when(c.getSharedPreferences(PREFS,0).getString("app_color_"+app.packageName.replace(Regex("[^A-Za-z0-9_.-]"),"_"),"auto")){"white"->Color.White;"green"->L1voGreen;"warm"->Color(0xFFFFF4D6);else->MaterialTheme.colorScheme.onSurface};val appFontFamily=when(app?.let{appFont(c,it.packageName)}){"Serif"->FontFamily.Serif;"Mono"->FontFamily.Monospace;"Cursive"->FontFamily.Cursive;else->FontFamily.SansSerif};Surface(shape=RoundedCornerShape(30.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.94f),shadowElevation=7.dp,modifier=m.combinedClickable(onClick={if(s.kind==SlotKind.HOME)onHome()else openSlot(c,s)},onLongClick={if(s.kind!=SlotKind.HOME)onEdit(s.id)})){Column(Modifier.fillMaxSize().padding(12.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center){if(app!=null){CustomAppIcon(app,Modifier.size(38.dp));Spacer(Modifier.height(8.dp));Text(appDisplayName(c,app),color=appColor,fontFamily=appFontFamily,style=MaterialTheme.typography.labelMedium,maxLines=1)}else{Icon(icon,s.label,tint=L1voDeepGreen,modifier=Modifier.size(38.dp));Spacer(Modifier.height(8.dp));Text(s.label,color=MaterialTheme.colorScheme.onSurface,style=MaterialTheme.typography.labelMedium,maxLines=1)}}}}
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HomeDashboard(apps:List<LaunchableApp>,slots:List<QuickSlot>,ink:Color,onBack:()->Unit,onHub:()->Unit,onLeau:()->Unit,onHomeSettings:()->Unit,onPickWidget:()->Unit,animations:Boolean){
     val context=LocalContext.current
@@ -79,6 +80,7 @@ fun HomeDashboard(apps:List<LaunchableApp>,slots:List<QuickSlot>,ink:Color,onBac
     val screenHeightPx=with(density){LocalConfiguration.current.screenHeightDp.dp.toPx()}
     val deleteCenterY=screenHeightPx-with(density){112.dp.toPx()}
     val enabledSystem=listOf("weather","calendar","notes","maps").filter{prefs.getBoolean("home_system_$it",true)}
+    val systemOffsets=enabledSystem.associateWith{key->Offset(prefs.getFloat("system_x_$key",0f),prefs.getFloat("system_y_$key",0f))}
     LaunchedEffect(Unit){while(true){delay(1000);now=System.currentTimeMillis();val latest=prefs.getStringSet("home_widget_ids",emptySet())!!.mapNotNull{it.toIntOrNull()};if(latest!=widgetIds)widgetIds=latest}}
     LaunchedEffect(hasLocation){if(hasLocation){val lm=context.getSystemService(Context.LOCATION_SERVICE) as LocationManager;val loc=runCatching{lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)?:lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)}.getOrNull();if(loc!=null){weather=try{withContext(Dispatchers.IO){val json=URL("https://api.open-meteo.com/v1/forecast?latitude="+loc.latitude+"&longitude="+loc.longitude+"&current=temperature_2m,weather_code&timezone=auto").readText();val cur=JSONObject(json).getJSONObject("current");cur.getDouble("temperature_2m").toInt().toString()+"° • "+weatherCodeLabel(cur.getInt("weather_code"))}}catch(_:Exception){"Weather unavailable"}}else weather="Location unavailable"}}
     LaunchedEffect(Unit){if(context.checkSelfPermission(Manifest.permission.READ_CALENDAR)==PackageManager.PERMISSION_GRANTED){nextEvent=try{context.contentResolver.query(CalendarContract.Instances.CONTENT_URI.buildUpon().apply{appendPath(System.currentTimeMillis().toString());appendPath((System.currentTimeMillis()+7*24*60*60*1000).toString())}.build(),arrayOf(CalendarContract.Instances.EVENT_ID,CalendarContract.Instances.TITLE,CalendarContract.Instances.BEGIN),null,null,CalendarContract.Instances.BEGIN+" ASC")?.use{cur->if(cur.moveToFirst())cur.getString(cur.getColumnIndexOrThrow(CalendarContract.Instances.TITLE)) else "No upcoming event"}?:"No upcoming event"}catch(_:Exception){"Calendar unavailable"}}}
@@ -122,7 +124,7 @@ fun HomeDashboard(apps:List<LaunchableApp>,slots:List<QuickSlot>,ink:Color,onBac
                                 deleteArmed=kotlin.math.abs(cx-screenWidthPx/2f)<72.dp.toPx()&&kotlin.math.abs(cy-deleteCenterY)<72.dp.toPx()
                             }
                         }){
-                            AndroidView(factory={widgetHost?.createView(context,id,info)},modifier=Modifier.fillMaxSize())
+                            AndroidView(factory={widgetHost?.createView(context,id,info) ?: android.view.View(context)},modifier=Modifier.fillMaxSize())
                         }
                     }
                 }
