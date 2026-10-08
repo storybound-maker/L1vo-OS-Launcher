@@ -3,6 +3,8 @@ package com.l1vo.oslauncher
 import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.provider.ContactsContract
 import android.media.AudioManager
 import android.media.ToneGenerator
 import android.speech.RecognizerIntent
@@ -66,15 +68,15 @@ fun VibeeOverlay(apps:List<LaunchableApp>,ink:Color,onDismiss:()->Unit){
     }
 }
 
-private fun startVibeeListening(context:Context,recognizer:SpeechRecognizer,onText:(String)->Unit,onFail:()->Unit){
+private fun startVibeeListening(context:Context,recognizer:SpeechRecognizer,onText:(String)->Unit,onFail:()->Unit){\n    runCatching { recognizer.cancel() }
     recognizer.setRecognitionListener(object:android.speech.RecognitionListener{
         override fun onReadyForSpeech(p0:android.os.Bundle?){}
         override fun onBeginningOfSpeech(){}
         override fun onRmsChanged(p0:Float){}
         override fun onBufferReceived(p0:ByteArray?){}
         override fun onEndOfSpeech(){}
-        override fun onError(p0:Int){onFail()}
-        override fun onResults(b:android.os.Bundle?){onText(b?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty())}
+        override fun onError(p0:Int){runCatching{recognizer.cancel()};onFail()}
+        override fun onResults(b:android.os.Bundle?){val result=b?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()?.trim().orEmpty();runCatching{recognizer.cancel()};if(result.isBlank())onFail()else onText(result)}
         override fun onPartialResults(p0:android.os.Bundle?){}
         override fun onEvent(p0:Int,p1:android.os.Bundle?){}
     })
@@ -88,11 +90,39 @@ private fun startVibeeListening(context:Context,recognizer:SpeechRecognizer,onTe
 private fun handleVibeeCommand(context:Context,apps:List<LaunchableApp>,raw:String){
     val text=raw.trim().lowercase(Locale.getDefault())
     val open=text.removePrefix("open ").trim()
-    val app=apps.firstOrNull{it.label.lowercase(Locale.getDefault())==open || it.label.lowercase(Locale.getDefault()).contains(open)}
+    val app=apps.firstOrNull{
+        val label=it.label.lowercase(Locale.getDefault())
+        label==open || label.contains(open) || open.contains(label)
+    }
     when{
         text.startsWith("open ")&&app!=null->{vibeeTone(ToneGenerator.TONE_PROP_ACK);launch(context,app.intent)}
-        text.startsWith("call ")->{val number=raw.substringAfter("call ").trim();launch(context,Intent(Intent.ACTION_DIAL,android.net.Uri.parse("tel:"+android.net.Uri.encode(number))));vibeeTone(ToneGenerator.TONE_PROP_ACK)}
-        text=="open settings"->{launch(context,Intent(android.provider.Settings.ACTION_SETTINGS));vibeeTone(ToneGenerator.TONE_PROP_ACK)}
+        text.startsWith("call ")->{
+            val target=raw.substringAfter("call ").trim()
+            val direct=target.filter{it.isDigit()||it=='+'||it=='*'||it=='#'}
+            val number=if(direct.length>=5)direct else findContactNumber(context,target)
+            if(number!=null){
+                launch(context,Intent(Intent.ACTION_DIAL,android.net.Uri.parse("tel:"+android.net.Uri.encode(number))))
+                vibeeTone(ToneGenerator.TONE_PROP_ACK)
+            }else vibeeTone(ToneGenerator.TONE_PROP_NACK)
+        }
+        text=="open settings"||text=="settings"->{launch(context,Intent(android.provider.Settings.ACTION_SETTINGS));vibeeTone(ToneGenerator.TONE_PROP_ACK)}
         else->vibeeTone(ToneGenerator.TONE_PROP_NACK)
     }
+}
+
+private fun findContactNumber(context:Context,name:String):String?{
+    if(androidx.core.content.ContextCompat.checkSelfPermission(context,Manifest.permission.READ_CONTACTS)!=PackageManager.PERMISSION_GRANTED)return null
+    val uri=ContactsContract.CommonDataKinds.Phone.CONTENT_URI
+    val projection=arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER,ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
+    context.contentResolver.query(uri,projection,null,null,null)?.use{cursor->
+        val nameIndex=cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
+        val numberIndex=cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+        while(cursor.moveToNext()){
+            val contact=cursor.getString(nameIndex)?.lowercase(Locale.getDefault())?:""
+            if(contact==name.lowercase(Locale.getDefault())||contact.contains(name.lowercase(Locale.getDefault()))){
+                return cursor.getString(numberIndex)
+            }
+        }
+    }
+    return null
 }
