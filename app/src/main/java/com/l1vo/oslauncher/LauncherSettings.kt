@@ -62,7 +62,7 @@ fun L1voSettings(
             "Accounts"->AccountsSettings(p,ink,notif,{notif=it;p.edit().putBoolean(NOTIFICATIONS,it).apply();onChanged()})
             "Security"->SecuritySettings(p,ink)
             "Appearance"->AppearanceSettings(p,dark,ink,font,fontSize,fontColor,{font=it;onFont(it);onChanged()},{fontSize=it;p.edit().putFloat(FONT_SIZE,it).apply();onChanged()},{fontColor=it;p.edit().putString(FONT_COLOR,it).apply();onChanged()},{onTheme(!dark);onChanged()},onWallpaper)
-            "Themes"->ThemeSettings(p,ink,onChanged())
+            "Themes"->ThemeSettings(p,ink,onChanged)
             "App presentation"->AppPresentationSettings(p,ink,columns,appHubNavigation,hspace,vspace,appSize,highlight,highlightSize,{columns=it;p.edit().putInt(APPHUB_COLUMNS,it).apply();onChanged()},{appHubNavigation=it;p.edit().putString(APPHUB_NAV,it).apply();onChanged()},{hspace=it;p.edit().putFloat(APPHUB_HSPACE,it).apply();onChanged()},{vspace=it;p.edit().putFloat(APPHUB_VSPACE,it).apply();onChanged()},{appSize=it;p.edit().putFloat(APP_SIZE,it).apply();onChanged()},{highlight=it;p.edit().putString(HIGHLIGHT_SHAPE,it).apply();onChanged()},{highlightSize=it;p.edit().putFloat(HIGHLIGHT_SIZE,it).apply();onChanged()})
             "Home & Cube"->HomeCubeSettings(ink,onCube,onWallpaper)
             "Accessibility"->AccessibilitySettings(p,ink,anim,pill,{anim=it;p.edit().putBoolean(ANIMATIONS,it).apply();onChanged()},{pill=it;p.edit().putBoolean(PILL_APP,it).apply();onChanged()},onAccessibility)
