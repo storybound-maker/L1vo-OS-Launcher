@@ -107,14 +107,23 @@ private fun findContactNumber(context:Context,name:String):String?{
     return null
 }
 
+private fun resolveVibeeApp(context:Context,wanted:String,fallback:List<LaunchableApp>):LaunchableApp?{
+    val normalized=wanted.lowercase(Locale.getDefault()).replace(Regex("[^a-z0-9]+"),"")
+    val fresh=loadApps(context)
+    return (fresh+fallback).distinctBy{it.packageName}.firstOrNull{app->
+        val label=app.label.lowercase(Locale.getDefault()).replace(Regex("[^a-z0-9]+"),"")
+        label==normalized || label.contains(normalized) || normalized.contains(label)
+    }
+}
+
 private fun handleVibeeCommand(context:Context,apps:List<LaunchableApp>,raw:String,requestContacts:((String)->Unit)?=null){
     val command=raw.trim()
     val lower=command.lowercase(Locale.getDefault())
     when{
         lower=="open settings" || lower=="settings" -> launch(context,Intent(android.provider.Settings.ACTION_SETTINGS))
-        lower.startsWith("open ")->{
-            val wanted=command.substringAfter("open ", "").trim()
-            val app=apps.firstOrNull{it.label.equals(wanted,true)||it.label.contains(wanted,true)||wanted.contains(it.label,true)}
+        lower.startsWith("open ") || lower.startsWith("launch ")->{
+            val wanted=command.substringAfter(" ").trim().removePrefix("the ").trim()
+            val app=resolveVibeeApp(context,wanted,apps)
             if(app!=null) launch(context,app.intent) else android.widget.Toast.makeText(context,"I couldn't find $wanted",android.widget.Toast.LENGTH_SHORT).show()
         }
         lower.startsWith("call ")->{
