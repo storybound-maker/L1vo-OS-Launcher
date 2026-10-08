@@ -197,6 +197,23 @@ private fun resolveIntentIcon(context:Context,intent:Intent):Bitmap?=runCatching
 
 @Composable fun LeacherScreen(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit) = L1voBrowser(ink, onBack)
 
+
+private fun rememberAppUse(context: Context, packageName: String) {
+    val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    val key = "app_use_$packageName"
+    prefs.edit().putInt(key, prefs.getInt(key, 0) + 1).apply()
+}
+
+private fun loadFavoriteApps(context: Context, apps: List<LaunchableApp>): List<LaunchableApp> {
+    val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    return apps
+        .sortedWith(
+            compareByDescending<LaunchableApp> { prefs.getInt("app_use_${it.packageName}", 0) }
+                .thenBy { it.label.lowercase() }
+        )
+        .take(8)
+}
+
 @Composable fun L1voHub(ink: Color, onBack: () -> Unit, onSettings: () -> Unit, onLeau: () -> Unit, onWallpaper: () -> Unit) {
     val context = LocalContext.current
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 18.dp)) {
