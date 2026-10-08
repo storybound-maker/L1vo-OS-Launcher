@@ -114,7 +114,7 @@ import java.net.URL
 @Composable private fun HomeSystemWidget(key:String,subtitle:String,ink:Color,context:Context,offset:Offset,onMoving:()->Unit,onClick:()->Unit,onMoved:(Offset)->Unit){
     val icon=when(key){"weather"->Icons.Outlined.WbSunny;"calendar"->Icons.Outlined.CalendarMonth;"notes"->Icons.Outlined.EditNote;else->Icons.Outlined.Map}
     var current by remember(offset){mutableStateOf(offset)}
-    Surface(shape=RoundedCornerShape(10.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.94f),shadowElevation=4.dp,modifier=Modifier.size(150.dp).offset{IntOffset(current.x.roundToInt(),current.y.roundToInt())}.pointerInput(key){detectDragGesturesAfterLongPress(onDragStart={onMoving();},onDragEnd={onMoved(current)}){change,amount->change.consume();current+=amount}}){
+    Surface(shape=RoundedCornerShape(10.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.94f),shadowElevation=4.dp,modifier=Modifier.size(150.dp).offset{IntOffset(current.x.roundToInt(),current.y.roundToInt())}.pointerInput(key){detectDragGesturesAfterLongPress(onDragStart={onMoving()},onDragEnd={onMoved(current)}){change,amount->change.consume();current+=amount}}){
         Row(Modifier.fillMaxSize().padding(16.dp),verticalAlignment=Alignment.CenterVertically){
             Surface(shape=RoundedCornerShape(16.dp),color=L1voGreen.copy(alpha=.12f),modifier=Modifier.size(50.dp)){Box(contentAlignment=Alignment.Center){Icon(icon,key,tint=L1voDeepGreen)}}
             Spacer(Modifier.width(14.dp));Column(Modifier.weight(1f)){Text(key.replaceFirstChar{it.uppercase()},color=ink,fontWeight=FontWeight.SemiBold);Text(subtitle,color=ink.copy(alpha=.62f),style=MaterialTheme.typography.bodySmall)}
