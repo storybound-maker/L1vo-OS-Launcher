@@ -95,12 +95,12 @@ fun HomeDashboard(apps:List<LaunchableApp>,slots:List<QuickSlot>,ink:Color,onBac
             Box(Modifier.weight(1f).fillMaxWidth().combinedClickable(onClick={},onLongClick=onPickWidget)){
                 Column(Modifier.fillMaxSize().padding(top=8.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){
                     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(12.dp)){
-                        HomeSystemWidget("weather",weather,ink,context,{if(!hasLocation)locationPermission.launch(Manifest.permission.ACCESS_COARSE_LOCATION)},{moving=true}){o,overlap->if(overlap)prefs.edit().putBoolean("home_system_weather",false).apply() else {prefs.edit().putFloat("system_x_weather",o.x).putFloat("system_y_weather",o.y).apply()};moving=false;deleteArmed=false}
-                        HomeSystemWidget("calendar",nextEvent,ink,context,{launch(context,Intent(Intent.ACTION_VIEW).apply{data=android.net.Uri.parse("content://com.android.calendar/time/"+now)})},{moving=true}){o,overlap->if(overlap)prefs.edit().putBoolean("home_system_calendar",false).apply() else {prefs.edit().putFloat("system_x_calendar",o.x).putFloat("system_y_calendar",o.y).apply()};moving=false;deleteArmed=false}
+                        HomeSystemWidget("weather",weather,ink,context,systemOffsets["weather"]?:Offset.Zero,{if(!hasLocation)locationPermission.launch(Manifest.permission.ACCESS_COARSE_LOCATION)},{moving=true}){o,overlap->if(overlap)prefs.edit().putBoolean("home_system_weather",false).apply() else {prefs.edit().putFloat("system_x_weather",o.x).putFloat("system_y_weather",o.y).apply()};moving=false;deleteArmed=false}
+                        HomeSystemWidget("calendar",nextEvent,ink,context,systemOffsets["calendar"]?:Offset.Zero,{launch(context,Intent(Intent.ACTION_VIEW).apply{data=android.net.Uri.parse("content://com.android.calendar/time/"+now)})},{moving=true}){o,overlap->if(overlap)prefs.edit().putBoolean("home_system_calendar",false).apply() else {prefs.edit().putFloat("system_x_calendar",o.x).putFloat("system_y_calendar",o.y).apply()};moving=false;deleteArmed=false}
                     }
                     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(12.dp)){
-                        HomeSystemWidget("notes",if(note.isBlank())"Tap to write" else note,ink,context,{showNote=true},{moving=true}){o,overlap->if(overlap)prefs.edit().putBoolean("home_system_notes",false).apply() else {prefs.edit().putFloat("system_x_notes",o.x).putFloat("system_y_notes",o.y).apply()};moving=false;deleteArmed=false}
-                        HomeSystemWidget("maps","Open live map",ink,context,{launch(context,Intent(Intent.ACTION_VIEW,android.net.Uri.parse("geo:0,0?q=My+Location")))},{moving=true}){o,overlap->if(overlap)prefs.edit().putBoolean("home_system_maps",false).apply() else {prefs.edit().putFloat("system_x_maps",o.x).putFloat("system_y_maps",o.y).apply()};moving=false;deleteArmed=false}
+                        HomeSystemWidget("notes",if(note.isBlank())"Tap to write" else note,ink,context,systemOffsets["notes"]?:Offset.Zero,{showNote=true},{moving=true}){o,overlap->if(overlap)prefs.edit().putBoolean("home_system_notes",false).apply() else {prefs.edit().putFloat("system_x_notes",o.x).putFloat("system_y_notes",o.y).apply()};moving=false;deleteArmed=false}
+                        HomeSystemWidget("maps","Open live map",ink,context,systemOffsets["maps"]?:Offset.Zero,{launch(context,Intent(Intent.ACTION_VIEW,android.net.Uri.parse("geo:0,0?q=My+Location")))},{moving=true}){o,overlap->if(overlap)prefs.edit().putBoolean("home_system_maps",false).apply() else {prefs.edit().putFloat("system_x_maps",o.x).putFloat("system_y_maps",o.y).apply()};moving=false;deleteArmed=false}
                     }
                     widgetIds.forEach{id->
                         val info=AppWidgetManager.getInstance(context).getAppWidgetInfo(id)
@@ -137,19 +137,31 @@ fun HomeDashboard(apps:List<LaunchableApp>,slots:List<QuickSlot>,ink:Color,onBac
 }
 
 @OptIn(ExperimentalFoundationApi::class)
-@Composable private fun HomeSystemWidget(key:String,subtitle:String,ink:Color,context:Context,onClick:()->Unit,onMoving:()->Unit,onMoved:(Offset,Boolean)->Unit){
+@Composable private fun HomeSystemWidget(key:String,subtitle:String,ink:Color,context:Context,offset:Offset,onClick:()->Unit,onMoving:()->Unit,onMoved:(Offset,Boolean)->Unit){
     val density=androidx.compose.ui.platform.LocalDensity.current
     val screenWidthPx=with(density){LocalConfiguration.current.screenWidthDp.dp.toPx()}
     val screenHeightPx=with(density){LocalConfiguration.current.screenHeightDp.dp.toPx()}
     val deleteCenterY=screenHeightPx-with(density){112.dp.toPx()}
-    var current by remember{mutableStateOf(Offset.Zero)}
+    var current by remember(offset){mutableStateOf(offset)}
     val icon=when(key){"weather"->Icons.Outlined.WbSunny;"calendar"->Icons.Outlined.CalendarMonth;"notes"->Icons.Outlined.EditNote;else->Icons.Outlined.Map}
-    Surface(shape=RoundedCornerShape(18.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.94f),shadowElevation=3.dp,modifier=Modifier.fillMaxWidth(.48f).height(122.dp).pointerInput(key){
-        detectDragGesturesAfterLongPress(onDragStart={onMoving()},onDragEnd={val cx=screenWidthPx/2f;val cy=deleteCenterY;onMoved(current,kotlin.math.abs(cx-screenWidthPx/2f)<72.dp.toPx()&&kotlin.math.abs(cy-deleteCenterY)<72.dp.toPx())}){change,amount->change.consume();current+=amount}
-    }.combinedClickable(onClick=onClick,onLongClick=onMoving)){
+    Surface(shape=RoundedCornerShape(18.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.94f),shadowElevation=3.dp,
+        modifier=Modifier.fillMaxWidth(.48f).height(122.dp).offset{IntOffset(current.x.roundToInt(),current.y.roundToInt())}
+            .pointerInput(key){
+                detectDragGesturesAfterLongPress(
+                    onDragStart={onMoving()},
+                    onDragEnd={
+                        val cx=current.x+with(density){61.dp.toPx()}
+                        val cy=current.y+with(density){61.dp.toPx()}
+                        val overlap=kotlin.math.abs(cx-screenWidthPx/2f)<72.dp.toPx() && kotlin.math.abs(cy-deleteCenterY)<72.dp.toPx()
+                        onMoved(current,overlap)
+                    }
+                ){change,amount->change.consume();current+=amount}
+            }.combinedClickable(onClick=onClick,onLongClick=onMoving)
+    ){
         Row(Modifier.fillMaxSize().padding(14.dp),verticalAlignment=Alignment.CenterVertically){
             Surface(shape=RoundedCornerShape(14.dp),color=L1voGreen.copy(alpha=.10f),modifier=Modifier.size(44.dp)){Box(contentAlignment=Alignment.Center){Icon(icon,key,tint=L1voDeepGreen)}}
-            Spacer(Modifier.width(12.dp));Column(Modifier.weight(1f)){Text(key.replaceFirstChar{it.uppercase()},color=ink,fontWeight=FontWeight.SemiBold);Text(subtitle,color=ink.copy(alpha=.62f),style=MaterialTheme.typography.bodySmall,maxLines=2)}
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)){Text(key.replaceFirstChar{it.uppercase()},color=ink,fontWeight=FontWeight.SemiBold);Text(subtitle,color=ink.copy(alpha=.62f),style=MaterialTheme.typography.bodySmall,maxLines=2)}
         }
     }
 }
