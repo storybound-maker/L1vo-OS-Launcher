@@ -94,7 +94,7 @@ import androidx.compose.ui.unit.sp
                 "dashboard"->HomeDashboard(apps,slots,homeInk,{page="cube"},{page="hub"},{vibee=true},{page="home_settings"},{activity?.pickHomeWidget() ?: Unit},anim)
                 "hub"->AppHub(apps,ink,{page="cube"},{vibee=true},{wallpaperReturnPage="hub";page="wallpaper"},{launch(c,it.intent);page="hub"},{page="l1vo"},{page="leacher"},{settingsReturnPage="hub";settingsWallpaperTarget="hub";page="settings"},{editingApp=it;page="app_editor"},columns,appHubNavigation,hspace,vspace,appSize,highlightShape,highlightSize)
                 "leacher"->LeacherScreen(apps,ink){page="hub"}
-                "home_settings"->HomeHubSettings(c,ink,{page="dashboard"},{activity?.pickHomeWidget() ?: Unit})
+                "home_settings"->HomeHubSettings(c,ink,{page="dashboard"},{activity?.pickHomeWidget() ?: Unit},{activity?.resetHomeHubWidgets();page="dashboard"})
                 "app_editor"->editingApp?.let{AppEditorScreen(it,ink,{editingApp=null;page="hub"}){refresh++;editingApp=null}}
                 "l1vo"->L1voHub(ink,{page="hub"},{settingsReturnPage="l1vo";settingsWallpaperTarget=null;page="settings"},{vibee=true},{wallpaperReturnPage="l1vo";page="wallpaper"})
                 "settings"->L1voSettings(p,dark,{dark=it;p.edit().putBoolean(DARK_THEME,it).apply()},{p.edit().putString(FONT,it).apply();refresh++},{page=settingsReturnPage;settingsWallpaperTarget=null},{wallpaperReturnPage="settings";page="wallpaper"},{edit=it},{launch(c,Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))},{launch(c,Intent(Settings.ACTION_HOME_SETTINGS))},{refresh++})
