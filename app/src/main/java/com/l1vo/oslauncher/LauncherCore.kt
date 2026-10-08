@@ -88,7 +88,7 @@ fun HomeDashboard(apps:List<LaunchableApp>,slots:List<QuickSlot>,ink:Color,onBac
         Column(Modifier.fillMaxSize().padding(horizontal=20.dp).padding(top=18.dp+WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),bottom=18.dp)){
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
                 IconButton(onClick=onBack,modifier=Modifier.offset(y=8.dp).size(56.dp)){Icon(Icons.AutoMirrored.Outlined.ArrowBack,"Back",tint=ink)}
-                Column(Modifier.weight(1f),horizontalAlignment=Alignment.CenterHorizontally){Text("HOME HUB",color=ink,fontWeight=FontWeight.Medium,letterSpacing=2.sp);Text(java.text.SimpleDateFormat("EEEE, d MMMM",Locale.getDefault()).format(java.util.Date(now)),color=ink.copy(alpha=.62f),style=MaterialTheme.typography.bodySmall)}
+                Column(Modifier.weight(1f),horizontalAlignment=Alignment.CenterHorizontally){Text("HOME HUB",color=ink,fontWeight=FontWeight.Medium,letterSpacing=2.sp);Text(java.text.SimpleDateFormat("EEEE, d MMMM",Locale.ENGLISH).format(java.util.Date(now)),color=ink.copy(alpha=.62f),style=MaterialTheme.typography.bodySmall)}
                 IconButton(onClick=onHomeSettings){Icon(Icons.Outlined.Settings,"Home Hub settings",tint=L1voGreen)}
             }
             Spacer(Modifier.height(8.dp))
@@ -163,7 +163,7 @@ fun HomeDashboard(apps:List<LaunchableApp>,slots:List<QuickSlot>,ink:Color,onBac
         Row(Modifier.fillMaxSize().padding(14.dp),verticalAlignment=Alignment.CenterVertically){
             Surface(shape=RoundedCornerShape(14.dp),color=L1voGreen.copy(alpha=.10f),modifier=Modifier.size(44.dp)){Box(contentAlignment=Alignment.Center){Icon(icon,key,tint=L1voDeepGreen)}}
             Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)){Text(key.replaceFirstChar{it.uppercase()},color=ink,fontWeight=FontWeight.SemiBold);Text(subtitle,color=ink.copy(alpha=.62f),style=MaterialTheme.typography.bodySmall,maxLines=2)}
+            Column(Modifier.weight(1f)){Text(when(key){"weather"->"Weather";"calendar"->"Calendar";"notes"->"Notes";else->"Maps"},color=ink,fontWeight=FontWeight.SemiBold);Text(subtitle,color=ink.copy(alpha=.62f),style=MaterialTheme.typography.bodySmall,maxLines=2)}
         }
     }
 }
