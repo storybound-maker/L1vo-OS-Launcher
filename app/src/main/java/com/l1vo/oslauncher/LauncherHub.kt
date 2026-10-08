@@ -195,36 +195,7 @@ private fun resolveIntentIcon(context:Context,intent:Intent):Bitmap?=runCatching
     if(menu)AppActionMenu(a,ink,{menu=false}){onEdit(a)}
 }
 
-@Composable fun LeacherScreen(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit) {
-    val context=LocalContext.current
-    var query by rememberSaveable{mutableStateOf("")}
-    val browserCandidates=listOf("Google Chrome","Chrome","Opera","Brave")
-    Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).verticalScroll(rememberScrollState()).padding(top=WindowInsets.statusBars.asPaddingValues().calculateTopPadding())){
-        Row(Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=8.dp),verticalAlignment=Alignment.CenterVertically){
-            IconButton(onClick=onBack){Icon(Icons.AutoMirrored.Outlined.ArrowBack,"Back",tint=ink)}
-            Text("LEACHER",color=ink,style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.SemiBold,modifier=Modifier.weight(1f))
-            IconButton(onClick={query=""}){Icon(Icons.Outlined.MoreVert,"Menu",tint=ink)}
-        }
-        Surface(shape=RoundedCornerShape(14.dp),color=MaterialTheme.colorScheme.surface,shadowElevation=2.dp,modifier=Modifier.fillMaxWidth().padding(horizontal=14.dp).height(52.dp)){
-            Row(Modifier.fillMaxSize().padding(horizontal=14.dp),verticalAlignment=Alignment.CenterVertically){Icon(Icons.Outlined.Search,"Search",tint=L1voDeepGreen);Spacer(Modifier.width(8.dp));BasicTextField(value=query,onValueChange={query=it},singleLine=true,textStyle=MaterialTheme.typography.bodyLarge.copy(color=ink),modifier=Modifier.weight(1f),decorationBox={inner->if(query.isEmpty())Text("Search or enter website",color=ink.copy(alpha=.55f));inner()});if(query.isNotEmpty())IconButton(onClick={query=""}){Icon(Icons.Outlined.Close,"Clear",tint=ink)}}}
-        Spacer(Modifier.height(18.dp))
-        Row(Modifier.fillMaxWidth().padding(horizontal=14.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)){browserCandidates.forEach{label->val app=apps.firstOrNull{it.label.equals(label,true)||it.label.contains(label,true)};BrowserBridge(label,ink,app,Modifier.weight(1f)){if(app!=null)launch(context,app.intent)else launchBrowser(context)}}}
-        Spacer(Modifier.height(20.dp))
-        Text("Favorites",color=ink,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(horizontal=18.dp))
-        Spacer(Modifier.height(8.dp))
-        listOf("google.com","youtube.com","wikipedia.org","github.com").forEach{site->Surface(onClick={launch(context,Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://$site")))},shape=RoundedCornerShape(16.dp),color=MaterialTheme.colorScheme.surface,modifier=Modifier.fillMaxWidth().padding(horizontal=14.dp,vertical=4.dp)){Row(Modifier.padding(14.dp),verticalAlignment=Alignment.CenterVertically){Icon(Icons.Outlined.Language,site,tint=L1voDeepGreen);Spacer(Modifier.width(12.dp));Text(site,color=ink,modifier=Modifier.weight(1f));Icon(Icons.Outlined.ChevronRight,"Open",tint=ink.copy(alpha=.5f))}}}
-        Spacer(Modifier.height(20.dp))
-        Text("Start Page",color=ink,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(horizontal=18.dp))
-        Spacer(Modifier.height(8.dp))
-        Surface(onClick={launchBrowser(context)},shape=RoundedCornerShape(18.dp),color=L1voDeepGreen,modifier=Modifier.fillMaxWidth().padding(horizontal=14.dp).height(64.dp)){Row(Modifier.padding(horizontal=18.dp),verticalAlignment=Alignment.CenterVertically){Icon(Icons.Outlined.Public,"Web",tint=Color.White);Spacer(Modifier.width(12.dp));Text("Open the web",color=Color.White,fontWeight=FontWeight.Bold,modifier=Modifier.weight(1f));Icon(Icons.Outlined.ArrowForward,"Go",tint=Color.White)}}
-    }
-}
-
-@Composable private fun BrowserBridge(label:String,ink:Color,app:LaunchableApp?,modifier:Modifier,onClick:()->Unit){Surface(onClick=onClick,shape=RoundedCornerShape(16.dp),color=MaterialTheme.colorScheme.surface,shadowElevation=2.dp,modifier=modifier.height(86.dp)){Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center,modifier=Modifier.fillMaxSize()){Icon(if(label.contains("Chrome"))Icons.Outlined.Language else Icons.Outlined.Public,label,tint=L1voDeepGreen,modifier=Modifier.size(28.dp));Spacer(Modifier.height(5.dp));Text(label,color=ink,fontWeight=FontWeight.Medium,style=MaterialTheme.typography.labelSmall,maxLines=1)}}}
-private fun launchBrowser(context:Context){launch(context,Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://www.google.com")))}
-
-private fun rememberAppUse(context:Context, packageName:String){val prefs=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE);val key="app_use_$packageName";prefs.edit().putInt(key,prefs.getInt(key,0)+1).apply()}
-private fun loadFavoriteApps(context:Context, apps:List<LaunchableApp>):List<LaunchableApp>{val prefs=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE);return apps.sortedWith(compareByDescending<LaunchableApp>{prefs.getInt("app_use_${it.packageName}",0)}.thenBy{it.label.lowercase()}).take(8)}
+@Composable fun LeacherScreen(apps: List<LaunchableApp>, ink: Color, onBack: () -> Unit) = L1voBrowser(ink, onBack)
 
 @Composable fun L1voHub(ink: Color, onBack: () -> Unit, onSettings: () -> Unit, onLeau: () -> Unit, onWallpaper: () -> Unit) {
     val context = LocalContext.current
