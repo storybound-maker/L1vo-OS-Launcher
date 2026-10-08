@@ -91,7 +91,7 @@ import androidx.compose.ui.unit.sp
             WallpaperBackground(activeWallpaper,dark || page=="dashboard" || page=="home_settings",activePlaylist,interval,useSystemWallpaper)
             if(page in setOf("settings","home_settings","app_editor","wallpaper","l1vo")) Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha=if(dark) .32f else .20f)))
             when(page){
-                "dashboard"->HomeDashboard(apps,slots,homeInk,{page="cube"},{page="hub"},{vibee=true},{page="home_settings"},anim)
+                "dashboard"->HomeDashboard(apps,slots,homeInk,{page="cube"},{page="hub"},{vibee=true},{page="home_settings"},{activity?.pickHomeWidget() ?: Unit},anim)
                 "hub"->AppHub(apps,ink,{page="cube"},{vibee=true},{wallpaperReturnPage="hub";page="wallpaper"},{launch(c,it.intent);page="hub"},{page="l1vo"},{page="leacher"},{settingsReturnPage="hub";settingsWallpaperTarget="hub";page="settings"},{editingApp=it;page="app_editor"},columns,appHubNavigation,hspace,vspace,appSize,highlightShape,highlightSize)
                 "leacher"->LeacherScreen(apps,ink){page="hub"}
                 "home_settings"->HomeHubSettings(c,ink,{page="dashboard"},{activity?.pickHomeWidget() ?: Unit})
