@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -70,6 +71,8 @@ import java.net.URL
     var widgetIds by remember{mutableStateOf(prefs.getStringSet("home_widget_ids",emptySet())!!.mapNotNull{it.toIntOrNull()})}
     var offsets by remember(widgetIds){mutableStateOf(widgetIds.associateWith{id->Offset(prefs.getFloat("widget_x_$id",0f),prefs.getFloat("widget_y_$id",0f))})}
     var moving by remember{mutableStateOf<String?>(null)}
+    var deleteArmed by remember{mutableStateOf(false)}
+    val screenHeightDp=LocalConfiguration.current.screenHeightDp.toFloat()
     val enabledSystem=listOf("weather","calendar","notes","maps").filter{prefs.getBoolean("home_system_$it",true)}
     var systemOffsets by remember(enabledSystem){mutableStateOf(enabledSystem.associateWith{key->Offset(prefs.getFloat("system_x_$key",0f),prefs.getFloat("system_y_$key",0f))})}
     LaunchedEffect(Unit){while(true){delay(1000);now=System.currentTimeMillis();val latest=prefs.getStringSet("home_widget_ids",emptySet())!!.mapNotNull{it.toIntOrNull()};if(latest!=widgetIds)widgetIds=latest}}
@@ -96,18 +99,14 @@ import java.net.URL
             widgetIds.forEach{id->
                 val info=AppWidgetManager.getInstance(context).getAppWidgetInfo(id)
                 val pos=offsets[id]?:Offset.Zero
-                if(info!=null)Box(Modifier.fillMaxWidth().height(150.dp).offset{IntOffset(pos.x.roundToInt(),pos.y.roundToInt())}.pointerInput(id){detectDragGesturesAfterLongPress(onDragStart={moving="android:$id"},onDragEnd={prefs.edit().putFloat("widget_x_$id",offsets[id]?.x?:0f).putFloat("widget_y_$id",offsets[id]?.y?:0f).apply()}){change,dragAmount->change.consume();offsets=offsets.toMutableMap().also{it[id]=(it[id]?:Offset.Zero)+dragAmount}}}){
+                if(info!=null)Box(Modifier.fillMaxWidth().height(150.dp).offset{IntOffset(pos.x.roundToInt(),pos.y.roundToInt())}.pointerInput(id){detectDragGesturesAfterLongPress(onDragStart={moving="android:$id";deleteArmed=false},onDragEnd={if(deleteArmed){widgetHost?.deleteAppWidgetId(id);widgetIds=widgetIds.filterNot{it==id};prefs.edit().putStringSet("home_widget_ids",widgetIds.map{it.toString()}.toSet()).remove("widget_x_$id").remove("widget_y_$id").apply()};prefs.edit().putFloat("widget_x_$id",offsets[id]?.x?:0f).putFloat("widget_y_$id",offsets[id]?.y?:0f).apply();moving=null;deleteArmed=false}){change,dragAmount->change.consume();offsets=offsets.toMutableMap().also{it[id]=(it[id]?:Offset.Zero)+dragAmount};deleteArmed=(offsets[id]?.y?:0f)>screenHeightDp*.55f}}){
                     AndroidView(factory={widgetHost!!.createView(context,id,info)},modifier=Modifier.fillMaxSize())
                 }
             }
         }
         Surface(onClick=onHub,color=L1voDeepGreen,shape=RoundedCornerShape(24.dp),modifier=Modifier.fillMaxWidth().height(64.dp),shadowElevation=5.dp){Row(Modifier.padding(horizontal=20.dp),verticalAlignment=Alignment.CenterVertically){Icon(Icons.Outlined.Apps,"App Hub",tint=Color.White);Spacer(Modifier.width(12.dp));Text("APP HUB",color=Color.White,fontWeight=FontWeight.Bold,modifier=Modifier.weight(1f));Icon(Icons.Outlined.ChevronRight,"Open",tint=Color.White)}}
     }
-    if(moving!=null)Surface(onClick={
-        val m=moving!!
-        if(m.startsWith("android:")){val id=m.removePrefix("android:").toIntOrNull();if(id!=null){widgetHost?.deleteAppWidgetId(id);widgetIds=widgetIds.filterNot{it==id};prefs.edit().putStringSet("home_widget_ids",widgetIds.map{it.toString()}.toSet()).apply()}} else if(m in listOf("weather","calendar","notes","maps")){prefs.edit().putBoolean("home_system_$m",false).apply()}
-        moving=null
-    },color=Color.Red,shape=CircleShape,modifier=Modifier.fillMaxWidth().wrapContentHeight().padding(bottom=10.dp)){Box(Modifier.size(58.dp),contentAlignment=Alignment.Center){Text("×",color=Color.White,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.headlineSmall)}}
+    if(moving!=null)Surface(onClick={},color=if(deleteArmed)Color(0xFFE53935) else Color(0xFFB71C1C),shape=CircleShape,shadowElevation=if(deleteArmed)12.dp else 4.dp,modifier=Modifier.align(Alignment.BottomCenter).padding(bottom=82.dp)){Box(Modifier.size(if(deleteArmed)68.dp else 58.dp),contentAlignment=Alignment.Center){Text("×",color=Color.White,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.headlineSmall)}}
     if(showNote){var draft by remember(note){mutableStateOf(note)};AlertDialog(onDismissRequest={showNote=false},title={Text("Quick note")},text={OutlinedTextField(value=draft,onValueChange={draft=it},modifier=Modifier.fillMaxWidth(),minLines=4)},confirmButton={TextButton(onClick={note=draft;prefs.edit().putString("home_note",draft).apply();showNote=false}){Text("Save")}},dismissButton={TextButton(onClick={showNote=false}){Text("Cancel")}})}
 }
 
@@ -115,7 +114,7 @@ import java.net.URL
 @Composable private fun HomeSystemWidget(key:String,subtitle:String,ink:Color,context:Context,offset:Offset,onMoving:()->Unit,onClick:()->Unit,onMoved:(Offset)->Unit){
     val icon=when(key){"weather"->Icons.Outlined.WbSunny;"calendar"->Icons.Outlined.CalendarMonth;"notes"->Icons.Outlined.EditNote;else->Icons.Outlined.Map}
     var current by remember(offset){mutableStateOf(offset)}
-    Surface(shape=RoundedCornerShape(24.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.94f),shadowElevation=4.dp,modifier=Modifier.fillMaxWidth().height(118.dp).offset{IntOffset(current.x.roundToInt(),current.y.roundToInt())}.pointerInput(key){detectDragGesturesAfterLongPress(onDragStart={onMoving() },onDragEnd={onMoved(current)}){change,amount->change.consume();current+=amount}}){
+    Surface(shape=RoundedCornerShape(10.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.94f),shadowElevation=4.dp,modifier=Modifier.size(150.dp).offset{IntOffset(current.x.roundToInt(),current.y.roundToInt())}.pointerInput(key){detectDragGesturesAfterLongPress(onDragStart={onMoving();},onDragEnd={onMoved(current)}){change,amount->change.consume();current+=amount}}){
         Row(Modifier.fillMaxSize().padding(16.dp),verticalAlignment=Alignment.CenterVertically){
             Surface(shape=RoundedCornerShape(16.dp),color=L1voGreen.copy(alpha=.12f),modifier=Modifier.size(50.dp)){Box(contentAlignment=Alignment.Center){Icon(icon,key,tint=L1voDeepGreen)}}
             Spacer(Modifier.width(14.dp));Column(Modifier.weight(1f)){Text(key.replaceFirstChar{it.uppercase()},color=ink,fontWeight=FontWeight.SemiBold);Text(subtitle,color=ink.copy(alpha=.62f),style=MaterialTheme.typography.bodySmall)}
