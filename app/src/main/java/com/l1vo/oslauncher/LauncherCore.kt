@@ -94,7 +94,7 @@ import java.net.URL
                     "calendar"->launch(context,Intent(Intent.ACTION_VIEW).apply{data=android.net.Uri.parse("content://com.android.calendar/time/"+now)})
                     "notes"->showNote=true
                     "maps"->launch(context,Intent(Intent.ACTION_VIEW,android.net.Uri.parse("geo:0,0?q=My+Location")))}
-                }){newOffset->systemOffsets=systemOffsets.toMutableMap().also{it[key]=newOffset};prefs.edit().putFloat("system_x_$key",newOffset.x).putFloat("system_y_$key",newOffset.y).apply()}
+                }){newOffset->deleteArmed=newOffset.y>screenHeightDp*.55f;if(deleteArmed){prefs.edit().putBoolean("home_system_$key",false).apply();moving=null;deleteArmed=false}else{systemOffsets=systemOffsets.toMutableMap().also{it[key]=newOffset};prefs.edit().putFloat("system_x_$key",newOffset.x).putFloat("system_y_$key",newOffset.y).apply()}}
             }
             widgetIds.forEach{id->
                 val info=AppWidgetManager.getInstance(context).getAppWidgetInfo(id)
