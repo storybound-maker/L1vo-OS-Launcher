@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.provider.ContactsContract
+import android.provider.MediaStore
 import android.media.AudioManager
 import android.media.ToneGenerator
 import android.speech.RecognizerIntent
@@ -113,6 +114,7 @@ private fun handleVibeeCommand(context:Context,apps:List<LaunchableApp>,raw:Stri
             }else vibeeTone(ToneGenerator.TONE_PROP_NACK)
         }
         text=="open settings"||text=="settings"->{launch(context,Intent(android.provider.Settings.ACTION_SETTINGS));vibeeTone(ToneGenerator.TONE_PROP_ACK)}
+        text=="record"||text=="start recording"||text=="record audio"->{runCatching{launch(context,Intent(MediaStore.Audio.Media.RECORD_SOUND_ACTION));vibeeTone(ToneGenerator.TONE_PROP_ACK)}.onFailure{vibeeTone(ToneGenerator.TONE_PROP_NACK)}}
         else->vibeeTone(ToneGenerator.TONE_PROP_NACK)
     }
 }
