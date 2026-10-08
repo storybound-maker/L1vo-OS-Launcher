@@ -37,8 +37,12 @@ fun VibeeOverlay(apps:List<LaunchableApp>,ink:Color,onDismiss:()->Unit){
     val pulse=rememberInfiniteTransition(label="vibee")
     val scale by pulse.animateFloat(.96f,1.05f,infiniteRepeatable(tween(1200),RepeatMode.Reverse),label="breathing")
     val recognizer=remember{SpeechRecognizer.createSpeechRecognizer(context)}
+    var pendingCommand by remember{mutableStateOf<String?>(null)}
+    val contactLauncher=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()){ok->
+        pendingCommand?.let{cmd->if(ok) handleVibeeCommand(context,apps,cmd) else {message="Contacts permission is needed";vibeeTone(ToneGenerator.TONE_PROP_NACK)}};pendingCommand=null
+    }
     val launcher=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()){ok->
-        if(ok) startVibeeListening(context,recognizer,{text->{message=text;handleVibeeCommand(context,apps,text);listening=false}}, {message="I didn't hear that";listening=false;vibeeTone(ToneGenerator.TONE_PROP_NACK)})
+        if(ok) startVibeeListening(context,recognizer,{text->{message=text;handleVibeeCommand(context,apps,text){pendingCommand=it;contactLauncher.launch(Manifest.permission.READ_CONTACTS)};listening=false}}, {message="I didn't hear that";listening=false;vibeeTone(ToneGenerator.TONE_PROP_NACK)})
         else {message="Microphone permission is needed";listening=false}
     }
     DisposableEffect(Unit){onDispose{recognizer.destroy()}}
@@ -87,7 +91,7 @@ private fun startVibeeListening(context:Context,recognizer:SpeechRecognizer,onTe
     })
 }
 
-private fun handleVibeeCommand(context:Context,apps:List<LaunchableApp>,raw:String){
+private fun handleVibeeCommand(context:Context,apps:List<LaunchableApp>,raw:String,onNeedContacts:(String)->Unit={}){
     val text=raw.trim().lowercase(Locale.getDefault())
     val open=text.removePrefix("open ").trim()
     val app=apps.firstOrNull{
