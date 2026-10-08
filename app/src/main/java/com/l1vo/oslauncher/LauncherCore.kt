@@ -123,6 +123,39 @@ import java.net.URL
         }
     }
 }
+@OptIn(ExperimentalFoundationApi::class)
+@Composable private fun HomeSystemWidget(key:String,subtitle:String,ink:Color,context:Context,offset:Offset,onMoving:()->Unit,onClick:()->Unit,onMoved:(Offset,Boolean)->Unit){
+    val density=androidx.compose.ui.platform.LocalDensity.current
+    val screenWidthPx=with(density){LocalConfiguration.current.screenWidthDp.dp.toPx()}
+    val screenHeightPx=with(density){LocalConfiguration.current.screenHeightDp.dp.toPx()}
+    val deleteCenterY=screenHeightPx-with(density){112.dp.toPx()}
+    var current by remember(offset){mutableStateOf(offset)}
+    val icon=when(key){"weather"->Icons.Outlined.WbSunny;"calendar"->Icons.Outlined.CalendarMonth;"notes"->Icons.Outlined.EditNote;else->Icons.Outlined.Map}
+    Surface(
+        shape=RoundedCornerShape(18.dp),
+        color=MaterialTheme.colorScheme.surface.copy(alpha=.94f),
+        shadowElevation=3.dp,
+        modifier=Modifier.fillMaxWidth(.48f).height(122.dp).offset{IntOffset(current.x.roundToInt(),current.y.roundToInt())}
+            .pointerInput(key){
+                detectDragGesturesAfterLongPress(
+                    onDragStart={onMoving()},
+                    onDragEnd={
+                        val cx=current.x+with(density){61.dp.toPx()}
+                        val cy=current.y+with(density){61.dp.toPx()}
+                        val overlap=kotlin.math.abs(cx-screenWidthPx/2f)<72.dp.toPx() && kotlin.math.abs(cy-deleteCenterY)<72.dp.toPx()
+                        onMoved(current,overlap)
+                    }
+                ){change,amount->change.consume();current+=amount}
+            }
+            .combinedClickable(onClick=onClick,onLongClick=onMoving)
+    ){
+        Row(Modifier.fillMaxSize().padding(14.dp),verticalAlignment=Alignment.CenterVertically){
+            Surface(shape=RoundedCornerShape(14.dp),color=L1voGreen.copy(alpha=.10f),modifier=Modifier.size(44.dp)){Box(contentAlignment=Alignment.Center){Icon(icon,key,tint=L1voDeepGreen)}}
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)){Text(key.replaceFirstChar{it.uppercase()},color=ink,fontWeight=FontWeight.SemiBold);Text(subtitle,color=ink.copy(alpha=.62f),style=MaterialTheme.typography.bodySmall,maxLines=2)}
+        }
+    }
+}
 private fun weatherCodeLabel(code:Int)=when(code){0->"Clear";1,2,3->"Cloudy";45,48->"Fog";51,53,55,56,57->"Drizzle";61,63,65,66,67,80,81,82->"Rain";71,73,75,77,85,86->"Snow";95,96,99->"Storm";else->"Weather"}
 @Composable private fun HubTile(title:String,subtitle:String,icon:ImageVector,ink:Color,onClick:()->Unit){Surface(onClick=onClick,color=MaterialTheme.colorScheme.surface.copy(alpha=.92f),shape=RoundedCornerShape(26.dp),shadowElevation=4.dp,modifier=Modifier.fillMaxWidth().height(142.dp)){Column(Modifier.padding(18.dp),verticalArrangement=Arrangement.SpaceBetween){Surface(shape=RoundedCornerShape(16.dp),color=L1voGreen.copy(alpha=.12f),modifier=Modifier.size(48.dp)){Box(contentAlignment=Alignment.Center){Icon(icon,title,tint=L1voDeepGreen)}};Column{Text(title,color=MaterialTheme.colorScheme.onSurface,fontWeight=FontWeight.SemiBold);Text(subtitle,color=MaterialTheme.colorScheme.onSurface.copy(alpha=.58f),style=MaterialTheme.typography.bodySmall)}}}}
 @Composable private fun LeauButton(onClick:()->Unit,animations:Boolean){val t=rememberInfiniteTransition(label="leau");val p by t.animateFloat(.94f,1.06f,infiniteRepeatable(tween(1700),RepeatMode.Reverse),label="pulse");Surface(onClick=onClick,modifier=Modifier.size(66.dp).scale(if(animations)p else 1f),shape=CircleShape,color=L1voInk,shadowElevation=8.dp){Box(contentAlignment=Alignment.Center){Text("⌒  ⌒",color=Color.White,fontWeight=FontWeight.Bold)}}}
