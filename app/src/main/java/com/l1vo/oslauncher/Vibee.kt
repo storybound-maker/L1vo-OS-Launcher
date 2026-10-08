@@ -106,3 +106,31 @@ private fun findContactNumber(context:Context,name:String):String?{
     }
     return null
 }
+
+private fun handleVibeeCommand(context:Context,apps:List<LaunchableApp>,raw:String,requestContacts:((String)->Unit)?=null){
+    val command=raw.trim()
+    val lower=command.lowercase(Locale.getDefault())
+    when{
+        lower=="open settings" || lower=="settings" -> launch(context,Intent(android.provider.Settings.ACTION_SETTINGS))
+        lower.startsWith("open ")->{
+            val wanted=command.substringAfter("open ", "").trim()
+            val app=apps.firstOrNull{it.label.equals(wanted,true)||it.label.contains(wanted,true)||wanted.contains(it.label,true)}
+            if(app!=null) launch(context,app.intent) else android.widget.Toast.makeText(context,"I couldn't find $wanted",android.widget.Toast.LENGTH_SHORT).show()
+        }
+        lower.startsWith("call ")->{
+            val who=command.substringAfter("call ", "").trim()
+            if(who.matches(Regex("[+0-9 ()-]{3,}"))){
+                launch(context,Intent(Intent.ACTION_DIAL,android.net.Uri.parse("tel:"+who.replace(" ",""))))
+            }else if(requestContacts!=null){
+                requestContacts(who)
+            }else{
+                val number=findContactNumber(context,who)
+                if(number!=null)launch(context,Intent(Intent.ACTION_DIAL,android.net.Uri.parse("tel:"+number))) else android.widget.Toast.makeText(context,"Contact not found",android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
+        lower=="record" || lower=="start recording" || lower=="record audio"->{
+            runCatching{launch(context,Intent(MediaStore.Audio.Media.RECORD_SOUND_ACTION))}.onFailure{android.widget.Toast.makeText(context,"No audio recorder is available",android.widget.Toast.LENGTH_SHORT).show()}
+        }
+        else->android.widget.Toast.makeText(context,"Try: open YouTube, call Mom, settings, or record audio",android.widget.Toast.LENGTH_LONG).show()
+    }
+}
