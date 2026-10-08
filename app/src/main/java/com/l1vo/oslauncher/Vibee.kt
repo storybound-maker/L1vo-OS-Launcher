@@ -62,7 +62,7 @@ fun VibeeOverlay(apps:List<LaunchableApp>,ink:Color,onDismiss:()->Unit){
                         listening=true
                         message="Listening…"
                         if(androidx.core.content.ContextCompat.checkSelfPermission(context,Manifest.permission.RECORD_AUDIO)==android.content.pm.PackageManager.PERMISSION_GRANTED)
-                            startVibeeListening(context,recognizer,{text->{message=text;handleVibeeCommand(context,apps,text);listening=false}},{message="I didn't hear that";listening=false;vibeeTone(ToneGenerator.TONE_PROP_NACK)})
+                            startVibeeListening(context,recognizer,{text->{message=text;handleVibeeCommand(context,apps,text){pendingCommand=it;contactLauncher.launch(Manifest.permission.READ_CONTACTS)};listening=false}},{message="I didn't hear that";listening=false;vibeeTone(ToneGenerator.TONE_PROP_NACK)})
                         else launcher.launch(Manifest.permission.RECORD_AUDIO)
                     }){Text(if(listening)"LISTENING" else "TAP TO SPEAK")}
                     TextButton(onClick={vibeeTone(ToneGenerator.TONE_PROP_ACK);onDismiss()}){Text("Close")}
@@ -72,7 +72,8 @@ fun VibeeOverlay(apps:List<LaunchableApp>,ink:Color,onDismiss:()->Unit){
     }
 }
 
-private fun startVibeeListening(context:Context,recognizer:SpeechRecognizer,onText:(String)->Unit,onFail:()->Unit){\n    runCatching { recognizer.cancel() }
+private fun startVibeeListening(context:Context,recognizer:SpeechRecognizer,onText:(String)->Unit,onFail:()->Unit){
+    runCatching { recognizer.cancel() }
     recognizer.setRecognitionListener(object:android.speech.RecognitionListener{
         override fun onReadyForSpeech(p0:android.os.Bundle?){}
         override fun onBeginningOfSpeech(){}
@@ -103,6 +104,8 @@ private fun handleVibeeCommand(context:Context,apps:List<LaunchableApp>,raw:Stri
         text.startsWith("call ")->{
             val target=raw.substringAfter("call ").trim()
             val direct=target.filter{it.isDigit()||it=='+'||it=='*'||it=='#'}
+            val hasContacts=androidx.core.content.ContextCompat.checkSelfPermission(context,Manifest.permission.READ_CONTACTS)==PackageManager.PERMISSION_GRANTED
+            if(!hasContacts){onNeedContacts(target);return}
             val number=if(direct.length>=5)direct else findContactNumber(context,target)
             if(number!=null){
                 launch(context,Intent(Intent.ACTION_DIAL,android.net.Uri.parse("tel:"+android.net.Uri.encode(number))))
