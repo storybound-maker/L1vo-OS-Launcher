@@ -74,12 +74,12 @@ fun HomeDashboard(apps:List<LaunchableApp>,slots:List<QuickSlot>,ink:Color,onBac
     var widgetIds by remember{mutableStateOf(prefs.getStringSet("home_widget_ids",emptySet())!!.mapNotNull{it.toIntOrNull()})}
     var offsets by remember(widgetIds){mutableStateOf(widgetIds.associateWith{id->Offset(prefs.getFloat("widget_x_$id",0f),prefs.getFloat("widget_y_$id",0f))})}
     var moving by remember{mutableStateOf(false)}
-    var deleteArmed by remember{mutableStateOf(false)}
+    var deleteArmed by remember{mutableStateOf(false)}\n    var showAddWidgetPrompt by remember{mutableStateOf(false)}\n    var systemRefresh by remember{mutableIntStateOf(0)}
     val density=androidx.compose.ui.platform.LocalDensity.current
     val screenWidthPx=with(density){LocalConfiguration.current.screenWidthDp.dp.toPx()}
     val screenHeightPx=with(density){LocalConfiguration.current.screenHeightDp.dp.toPx()}
     val deleteCenterY=screenHeightPx-with(density){112.dp.toPx()}
-    val enabledSystem=listOf("weather","calendar","notes","maps").filter{prefs.getBoolean("home_system_$it",true)}
+    val enabledSystem=listOf("weather","calendar","notes","maps").filter{prefs.getBoolean("home_system_$it",true)}\n    val systemRefreshKey=systemRefresh
     val systemOffsets=enabledSystem.associateWith{key->Offset(prefs.getFloat("system_x_$key",0f),prefs.getFloat("system_y_$key",0f))}
     LaunchedEffect(Unit){while(true){delay(1000);now=System.currentTimeMillis();val latest=prefs.getStringSet("home_widget_ids",emptySet())!!.mapNotNull{it.toIntOrNull()};if(latest!=widgetIds)widgetIds=latest}}
     LaunchedEffect(hasLocation){if(hasLocation){val lm=context.getSystemService(Context.LOCATION_SERVICE) as LocationManager;val loc=runCatching{lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)?:lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)}.getOrNull();if(loc!=null){weather=try{withContext(Dispatchers.IO){val json=URL("https://api.open-meteo.com/v1/forecast?latitude="+loc.latitude+"&longitude="+loc.longitude+"&current=temperature_2m,weather_code&timezone=auto").readText();val cur=JSONObject(json).getJSONObject("current");cur.getDouble("temperature_2m").toInt().toString()+"° • "+weatherCodeLabel(cur.getInt("weather_code"))}}catch(_:Exception){"Weather unavailable"}}else weather="Location unavailable"}}
@@ -94,15 +94,15 @@ fun HomeDashboard(apps:List<LaunchableApp>,slots:List<QuickSlot>,ink:Color,onBac
             Spacer(Modifier.height(8.dp))
             Text(java.text.SimpleDateFormat("HH:mm",Locale.getDefault()).format(java.util.Date(now)),color=ink,style=MaterialTheme.typography.displayLarge,fontWeight=FontWeight.SemiBold,modifier=Modifier.fillMaxWidth(),textAlign=androidx.compose.ui.text.style.TextAlign.Center)
             Spacer(Modifier.height(8.dp))
-            Box(Modifier.weight(1f).fillMaxWidth().combinedClickable(onClick={},onLongClick=onPickWidget)){
+            Box(Modifier.weight(1f).fillMaxWidth().combinedClickable(onClick={},onLongClick={showAddWidgetPrompt=true})){
                 Column(Modifier.fillMaxSize().padding(top=8.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){
                     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(12.dp)){
-                        HomeSystemWidget("weather",weather,ink,context,systemOffsets["weather"]?:Offset.Zero,{if(!hasLocation)locationPermission.launch(Manifest.permission.ACCESS_COARSE_LOCATION)},{moving=true}){o,overlap->if(overlap)prefs.edit().putBoolean("home_system_weather",false).apply() else {prefs.edit().putFloat("system_x_weather",o.x).putFloat("system_y_weather",o.y).apply()};moving=false;deleteArmed=false}
-                        HomeSystemWidget("calendar",nextEvent,ink,context,systemOffsets["calendar"]?:Offset.Zero,{launch(context,Intent(Intent.ACTION_VIEW).apply{data=android.net.Uri.parse("content://com.android.calendar/time/"+now)})},{moving=true}){o,overlap->if(overlap)prefs.edit().putBoolean("home_system_calendar",false).apply() else {prefs.edit().putFloat("system_x_calendar",o.x).putFloat("system_y_calendar",o.y).apply()};moving=false;deleteArmed=false}
+                        HomeSystemWidget("weather",weather,ink,context,systemOffsets["weather"]?:Offset.Zero,{if(!hasLocation)locationPermission.launch(Manifest.permission.ACCESS_COARSE_LOCATION)},{moving=true}){o,overlap->if(overlap)prefs.edit().putBoolean("home_system_weather",false).apply() else {prefs.edit().putFloat("system_x_weather",o.x).putFloat("system_y_weather",o.y).apply()};systemRefresh++;moving=false;deleteArmed=false}
+                        HomeSystemWidget("calendar",nextEvent,ink,context,systemOffsets["calendar"]?:Offset.Zero,{launch(context,Intent(Intent.ACTION_VIEW).apply{data=android.net.Uri.parse("content://com.android.calendar/time/"+now)})},{moving=true}){o,overlap->if(overlap)prefs.edit().putBoolean("home_system_calendar",false).apply() else {prefs.edit().putFloat("system_x_calendar",o.x).putFloat("system_y_calendar",o.y).apply()};systemRefresh++;moving=false;deleteArmed=false}
                     }
                     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(12.dp)){
-                        HomeSystemWidget("notes",if(note.isBlank())"Tap to write" else note,ink,context,systemOffsets["notes"]?:Offset.Zero,{showNote=true},{moving=true}){o,overlap->if(overlap)prefs.edit().putBoolean("home_system_notes",false).apply() else {prefs.edit().putFloat("system_x_notes",o.x).putFloat("system_y_notes",o.y).apply()};moving=false;deleteArmed=false}
-                        HomeSystemWidget("maps","Open live map",ink,context,systemOffsets["maps"]?:Offset.Zero,{launch(context,Intent(Intent.ACTION_VIEW,android.net.Uri.parse("geo:0,0?q=My+Location")))},{moving=true}){o,overlap->if(overlap)prefs.edit().putBoolean("home_system_maps",false).apply() else {prefs.edit().putFloat("system_x_maps",o.x).putFloat("system_y_maps",o.y).apply()};moving=false;deleteArmed=false}
+                        HomeSystemWidget("notes",if(note.isBlank())"Tap to write" else note,ink,context,systemOffsets["notes"]?:Offset.Zero,{showNote=true},{moving=true}){o,overlap->if(overlap)prefs.edit().putBoolean("home_system_notes",false).apply() else {prefs.edit().putFloat("system_x_notes",o.x).putFloat("system_y_notes",o.y).apply()};systemRefresh++;moving=false;deleteArmed=false}
+                        HomeSystemWidget("maps","Open live map",ink,context,systemOffsets["maps"]?:Offset.Zero,{launch(context,Intent(Intent.ACTION_VIEW,android.net.Uri.parse("geo:0,0?q=My+Location")))},{moving=true}){o,overlap->if(overlap)prefs.edit().putBoolean("home_system_maps",false).apply() else {prefs.edit().putFloat("system_x_maps",o.x).putFloat("system_y_maps",o.y).apply()};systemRefresh++;moving=false;deleteArmed=false}
                     }
                     widgetIds.forEach{id->
                         val info=AppWidgetManager.getInstance(context).getAppWidgetInfo(id)
@@ -135,7 +135,7 @@ fun HomeDashboard(apps:List<LaunchableApp>,slots:List<QuickSlot>,ink:Color,onBac
             Surface(onClick={},color=if(deleteArmed)Color(0xFFE53935) else Color(0xFFB71C1C),shape=CircleShape,shadowElevation=if(deleteArmed)12.dp else 4.dp,modifier=Modifier.padding(bottom=82.dp)){Box(Modifier.size(if(deleteArmed)68.dp else 58.dp),contentAlignment=Alignment.Center){Text("×",color=Color.White,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.headlineSmall)}}
         }
     }
-    if(showNote){var draft by remember(note){mutableStateOf(note)};AlertDialog(onDismissRequest={showNote=false},title={Text("Quick note")},text={OutlinedTextField(value=draft,onValueChange={draft=it},modifier=Modifier.fillMaxWidth(),minLines=4)},confirmButton={TextButton(onClick={note=draft;prefs.edit().putString("home_note",draft).apply();showNote=false}){Text("Save")}},dismissButton={TextButton(onClick={showNote=false}){Text("Cancel")}})}
+    if(showAddWidgetPrompt){AlertDialog(onDismissRequest={showAddWidgetPrompt=false},title={Text("Add widget")},text={Text("Choose an Android widget to place on your Home Hub.")},confirmButton={TextButton(onClick={showAddWidgetPrompt=false;onPickWidget()}){Text("ADD WIDGET")}},dismissButton={TextButton(onClick={showAddWidgetPrompt=false}){Text("CANCEL")}})}\n    if(showNote){var draft by remember(note){mutableStateOf(note)};AlertDialog(onDismissRequest={showNote=false},title={Text("Quick note")},text={OutlinedTextField(value=draft,onValueChange={draft=it},modifier=Modifier.fillMaxWidth(),minLines=4)},confirmButton={TextButton(onClick={note=draft;prefs.edit().putString("home_note",draft).apply();showNote=false}){Text("Save")}},dismissButton={TextButton(onClick={showNote=false}){Text("Cancel")}})}
 }
 
 @OptIn(ExperimentalFoundationApi::class)
