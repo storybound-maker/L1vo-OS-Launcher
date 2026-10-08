@@ -18,7 +18,8 @@ import kotlin.math.roundToInt
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.combinedClickable\nimport androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -74,12 +75,15 @@ fun HomeDashboard(apps:List<LaunchableApp>,slots:List<QuickSlot>,ink:Color,onBac
     var widgetIds by remember{mutableStateOf(prefs.getStringSet("home_widget_ids",emptySet())!!.mapNotNull{it.toIntOrNull()})}
     var offsets by remember(widgetIds){mutableStateOf(widgetIds.associateWith{id->Offset(prefs.getFloat("widget_x_$id",0f),prefs.getFloat("widget_y_$id",0f))})}
     var moving by remember{mutableStateOf(false)}
-    var deleteArmed by remember{mutableStateOf(false)}\n    var showAddWidgetPrompt by remember{mutableStateOf(false)}\n    var systemRefresh by remember{mutableIntStateOf(0)}
+    var deleteArmed by remember{mutableStateOf(false)}
+    var showAddWidgetPrompt by remember{mutableStateOf(false)}
+    var systemRefresh by remember{mutableIntStateOf(0)}
     val density=androidx.compose.ui.platform.LocalDensity.current
     val screenWidthPx=with(density){LocalConfiguration.current.screenWidthDp.dp.toPx()}
     val screenHeightPx=with(density){LocalConfiguration.current.screenHeightDp.dp.toPx()}
     val deleteCenterY=screenHeightPx-with(density){112.dp.toPx()}
-    val enabledSystem=listOf("weather","calendar","notes","maps").filter{prefs.getBoolean("home_system_$it",true)}\n    val systemRefreshKey=systemRefresh
+    val enabledSystem=listOf("weather","calendar","notes","maps").filter{prefs.getBoolean("home_system_$it",true)}
+    val systemRefreshKey=systemRefresh
     val systemOffsets=enabledSystem.associateWith{key->Offset(prefs.getFloat("system_x_$key",0f),prefs.getFloat("system_y_$key",0f))}
     LaunchedEffect(Unit){while(true){delay(1000);now=System.currentTimeMillis();val latest=prefs.getStringSet("home_widget_ids",emptySet())!!.mapNotNull{it.toIntOrNull()};if(latest!=widgetIds)widgetIds=latest}}
     LaunchedEffect(hasLocation){if(hasLocation){val lm=context.getSystemService(Context.LOCATION_SERVICE) as LocationManager;val loc=runCatching{lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)?:lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)}.getOrNull();if(loc!=null){weather=try{withContext(Dispatchers.IO){val json=URL("https://api.open-meteo.com/v1/forecast?latitude="+loc.latitude+"&longitude="+loc.longitude+"&current=temperature_2m,weather_code&timezone=auto").readText();val cur=JSONObject(json).getJSONObject("current");cur.getDouble("temperature_2m").toInt().toString()+"° • "+weatherCodeLabel(cur.getInt("weather_code"))}}catch(_:Exception){"Weather unavailable"}}else weather="Location unavailable"}}
@@ -135,7 +139,8 @@ fun HomeDashboard(apps:List<LaunchableApp>,slots:List<QuickSlot>,ink:Color,onBac
             Surface(onClick={},color=if(deleteArmed)Color(0xFFE53935) else Color(0xFFB71C1C),shape=CircleShape,shadowElevation=if(deleteArmed)12.dp else 4.dp,modifier=Modifier.padding(bottom=82.dp)){Box(Modifier.size(if(deleteArmed)68.dp else 58.dp),contentAlignment=Alignment.Center){Text("×",color=Color.White,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.headlineSmall)}}
         }
     }
-    if(showAddWidgetPrompt){AlertDialog(onDismissRequest={showAddWidgetPrompt=false},title={Text("Add widget")},text={Text("Choose an Android widget to place on your Home Hub.")},confirmButton={TextButton(onClick={showAddWidgetPrompt=false;onPickWidget()}){Text("ADD WIDGET")}},dismissButton={TextButton(onClick={showAddWidgetPrompt=false}){Text("CANCEL")}})}\n    if(showNote){var draft by remember(note){mutableStateOf(note)};AlertDialog(onDismissRequest={showNote=false},title={Text("Quick note")},text={OutlinedTextField(value=draft,onValueChange={draft=it},modifier=Modifier.fillMaxWidth(),minLines=4)},confirmButton={TextButton(onClick={note=draft;prefs.edit().putString("home_note",draft).apply();showNote=false}){Text("Save")}},dismissButton={TextButton(onClick={showNote=false}){Text("Cancel")}})}
+    if(showAddWidgetPrompt){AlertDialog(onDismissRequest={showAddWidgetPrompt=false},title={Text("Add widget")},text={Text("Choose an Android widget to place on your Home Hub.")},confirmButton={TextButton(onClick={showAddWidgetPrompt=false;onPickWidget()}){Text("ADD WIDGET")}},dismissButton={TextButton(onClick={showAddWidgetPrompt=false}){Text("CANCEL")}})}
+    if(showNote){var draft by remember(note){mutableStateOf(note)};AlertDialog(onDismissRequest={showNote=false},title={Text("Quick note")},text={OutlinedTextField(value=draft,onValueChange={draft=it},modifier=Modifier.fillMaxWidth(),minLines=4)},confirmButton={TextButton(onClick={note=draft;prefs.edit().putString("home_note",draft).apply();showNote=false}){Text("Save")}},dismissButton={TextButton(onClick={showNote=false}){Text("Cancel")}})}
 }
 
 @OptIn(ExperimentalFoundationApi::class)
