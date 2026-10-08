@@ -103,11 +103,13 @@ fun AppActionMenu(
                 }
 
                 TextButton(
-                    onClick = { showInfo = true },
+                    onClick = {
+                        runCatching { context.startActivity(Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:undefined"))) }
+                            .onFailure { android.widget.Toast.makeText(context,"Unable to open App info",android.widget.Toast.LENGTH_SHORT).show() }
+                        onDismiss()
+                    },
                     modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Info", color = ink)
-                }
+                ) { Text("Info", color = ink) }
 
                 TextButton(
                     onClick = { showLock = true },
