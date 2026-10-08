@@ -35,36 +35,40 @@ fun VibeeOverlay(apps:List<LaunchableApp>,ink:Color,onDismiss:()->Unit){
     val context=LocalContext.current
     var listening by remember{mutableStateOf(false)}
     var message by remember{mutableStateOf("Tap to speak")}
-    val pulse=rememberInfiniteTransition(label="vibee")
-    val scale by pulse.animateFloat(.96f,1.05f,infiniteRepeatable(tween(1200),RepeatMode.Reverse),label="breathing")
-    val recognizer=remember{SpeechRecognizer.createSpeechRecognizer(context)}
     var pendingCommand by remember{mutableStateOf<String?>(null)}
     val contactLauncher=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()){ok->
-        pendingCommand?.let{cmd->if(ok) handleVibeeCommand(context,apps,cmd) else {message="Contacts permission is needed";vibeeTone(ToneGenerator.TONE_PROP_NACK)}};pendingCommand=null
+        pendingCommand?.let{cmd->if(ok) handleVibeeCommand(context,apps,cmd) else {message="Contacts permission is needed";vibeeTone(ToneGenerator.TONE_PROP_NACK)}}
+        pendingCommand=null
     }
-    val launcher=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()){ok->
-        if(ok) startVibeeListening(context,recognizer,{text->{message=text;handleVibeeCommand(context,apps,text){pendingCommand=it;contactLauncher.launch(Manifest.permission.READ_CONTACTS)};listening=false}}, {message="I didn't hear that";listening=false;vibeeTone(ToneGenerator.TONE_PROP_NACK)})
-        else {message="Microphone permission is needed";listening=false}
+    val speechLauncher=rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()){result->
+        listening=false
+        val spoken=result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()?.trim().orEmpty()
+        if(result.resultCode==android.app.Activity.RESULT_OK && spoken.isNotBlank()){
+            message=spoken
+            handleVibeeCommand(context,apps,spoken){pendingCommand=it;contactLauncher.launch(Manifest.permission.READ_CONTACTS)}
+        }else{message="I didn't hear that";vibeeTone(ToneGenerator.TONE_PROP_NACK)}
     }
-    DisposableEffect(Unit){onDispose{recognizer.destroy()}}
+    val micLauncher=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()){ok->
+        if(ok){message="Listening…";listening=true;startVibeeActivity(context,speechLauncher::launch)}
+        else{message="Microphone permission is needed";listening=false}
+    }
+    val pulse=rememberInfiniteTransition(label="vibee")
+    val scale by pulse.animateFloat(.96f,1.05f,infiniteRepeatable(tween(1200),RepeatMode.Reverse),label="breathing")
     Surface(color=Color.Black.copy(alpha=.42f),modifier=Modifier.fillMaxSize()){
         Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){
             Surface(shape=RoundedCornerShape(32.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.98f),shadowElevation=18.dp,modifier=Modifier.fillMaxWidth(.88f).padding(18.dp)){
                 Column(Modifier.padding(24.dp),horizontalAlignment=Alignment.CenterHorizontally){
-                    Box(Modifier.size(132.dp).scale(scale).background(L1voGreen.copy(alpha=.13f),RoundedCornerShape(66.dp)),contentAlignment=Alignment.Center){
-                        Text("⌒  ⌒",color=L1voGreen,style=MaterialTheme.typography.headlineLarge)
-                    }
+                    Box(Modifier.size(132.dp).scale(scale).background(L1voGreen.copy(alpha=.13f),RoundedCornerShape(66.dp)),contentAlignment=Alignment.Center){Text("⌒  ⌒",color=L1voGreen,style=MaterialTheme.typography.headlineLarge)}
                     Spacer(Modifier.height(14.dp))
                     Text("VIBEE",color=ink,style=MaterialTheme.typography.headlineSmall)
                     Text(if(listening)"Listening…" else message,color=ink.copy(alpha=.65f))
                     Spacer(Modifier.height(16.dp))
                     Button(onClick={
+                        if(listening)return@Button
                         vibeeTone(ToneGenerator.TONE_PROP_BEEP)
-                        listening=true
-                        message="Listening…"
-                        if(androidx.core.content.ContextCompat.checkSelfPermission(context,Manifest.permission.RECORD_AUDIO)==android.content.pm.PackageManager.PERMISSION_GRANTED)
-                            startVibeeListening(context,recognizer,{text->{message=text;handleVibeeCommand(context,apps,text){pendingCommand=it;contactLauncher.launch(Manifest.permission.READ_CONTACTS)};listening=false}},{message="I didn't hear that";listening=false;vibeeTone(ToneGenerator.TONE_PROP_NACK)})
-                        else launcher.launch(Manifest.permission.RECORD_AUDIO)
+                        if(androidx.core.content.ContextCompat.checkSelfPermission(context,Manifest.permission.RECORD_AUDIO)==PackageManager.PERMISSION_GRANTED){
+                            message="Listening…";listening=true;startVibeeActivity(context,speechLauncher::launch)
+                        }else micLauncher.launch(Manifest.permission.RECORD_AUDIO)
                     }){Text(if(listening)"LISTENING" else "TAP TO SPEAK")}
                     TextButton(onClick={vibeeTone(ToneGenerator.TONE_PROP_ACK);onDismiss()}){Text("Close")}
                 }
@@ -73,50 +77,17 @@ fun VibeeOverlay(apps:List<LaunchableApp>,ink:Color,onDismiss:()->Unit){
     }
 }
 
-private fun startVibeeListening(context:Context,recognizer:SpeechRecognizer,onText:(String)->Unit,onFail:()->Unit){
-    runCatching { recognizer.cancel() }
-    recognizer.setRecognitionListener(object:android.speech.RecognitionListener{
-        override fun onReadyForSpeech(p0:android.os.Bundle?){}
-        override fun onBeginningOfSpeech(){}
-        override fun onRmsChanged(p0:Float){}
-        override fun onBufferReceived(p0:ByteArray?){}
-        override fun onEndOfSpeech(){}
-        override fun onError(p0:Int){runCatching{recognizer.cancel()};onFail()}
-        override fun onResults(b:android.os.Bundle?){val result=b?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()?.trim().orEmpty();runCatching{recognizer.cancel()};if(result.isBlank())onFail()else onText(result)}
-        override fun onPartialResults(p0:android.os.Bundle?){}
-        override fun onEvent(p0:Int,p1:android.os.Bundle?){}
-    })
-    recognizer.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply{
+private fun startVibeeActivity(context:Context,launch:(Intent)->Unit){
+    if(!SpeechRecognizer.isRecognitionAvailable(context)){
+        android.widget.Toast.makeText(context,"No speech recognition service is available",android.widget.Toast.LENGTH_LONG).show()
+        return
+    }
+    launch(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply{
         putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
         putExtra(RecognizerIntent.EXTRA_LANGUAGE,Locale.getDefault())
+        putExtra(RecognizerIntent.EXTRA_PROMPT,"Say a command")
         putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE,true)
     })
-}
-
-private fun handleVibeeCommand(context:Context,apps:List<LaunchableApp>,raw:String,onNeedContacts:(String)->Unit={}){
-    val text=raw.trim().lowercase(Locale.getDefault())
-    val open=text.removePrefix("open ").trim()
-    val app=apps.firstOrNull{
-        val label=it.label.lowercase(Locale.getDefault())
-        label==open || label.contains(open) || open.contains(label)
-    }
-    when{
-        text.startsWith("open ")&&app!=null->{vibeeTone(ToneGenerator.TONE_PROP_ACK);launch(context,app.intent)}
-        text.startsWith("call ")->{
-            val target=raw.substringAfter("call ").trim()
-            val direct=target.filter{it.isDigit()||it=='+'||it=='*'||it=='#'}
-            val hasContacts=androidx.core.content.ContextCompat.checkSelfPermission(context,Manifest.permission.READ_CONTACTS)==PackageManager.PERMISSION_GRANTED
-            if(!hasContacts){onNeedContacts(target);return}
-            val number=if(direct.length>=5)direct else findContactNumber(context,target)
-            if(number!=null){
-                launch(context,Intent(Intent.ACTION_DIAL,android.net.Uri.parse("tel:"+android.net.Uri.encode(number))))
-                vibeeTone(ToneGenerator.TONE_PROP_ACK)
-            }else vibeeTone(ToneGenerator.TONE_PROP_NACK)
-        }
-        text=="open settings"||text=="settings"->{launch(context,Intent(android.provider.Settings.ACTION_SETTINGS));vibeeTone(ToneGenerator.TONE_PROP_ACK)}
-        text=="record"||text=="start recording"||text=="record audio"->{runCatching{launch(context,Intent(MediaStore.Audio.Media.RECORD_SOUND_ACTION));vibeeTone(ToneGenerator.TONE_PROP_ACK)}.onFailure{vibeeTone(ToneGenerator.TONE_PROP_NACK)}}
-        else->vibeeTone(ToneGenerator.TONE_PROP_NACK)
-    }
 }
 
 private fun findContactNumber(context:Context,name:String):String?{
