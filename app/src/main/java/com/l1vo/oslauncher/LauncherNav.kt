@@ -25,6 +25,10 @@ import androidx.compose.ui.unit.sp
     var refresh by remember{mutableIntStateOf(0)}
     var wallpaper by remember{mutableStateOf(p.getString(WALLPAPER,null))}
     var dark by remember{mutableStateOf(p.getBoolean(DARK_THEME,false))}
+    var vibee by remember{mutableStateOf(false)}
+    val themeName=p.getString(L1VO_THEME,"default")?:"default"
+    val themeTone=p.getFloat(L1VO_THEME_TONE,1f)
+    applyL1voTheme(themeName,themeTone)
     var intervalAll by remember{mutableLongStateOf(p.getLong(WALLPAPER_INTERVAL_ALL,p.getLong(WALLPAPER_INTERVAL,3600L)))}
     var intervalMain by remember{mutableLongStateOf(p.getLong(WALLPAPER_INTERVAL_MAIN,p.getLong(WALLPAPER_INTERVAL,3600L)))}
     var intervalHome by remember{mutableLongStateOf(p.getLong(WALLPAPER_INTERVAL_HOME,p.getLong(WALLPAPER_INTERVAL,3600L)))}
@@ -66,12 +70,12 @@ import androidx.compose.ui.unit.sp
         Surface(Modifier.fillMaxSize(),color=if(useSystemWallpaper)Color.Transparent else Color.Transparent){
             WallpaperBackground(activeWallpaper,dark || page=="dashboard" || page=="home_settings",activePlaylist,interval,useSystemWallpaper)
             when(page){
-                "dashboard"->HomeDashboard(apps,slots,homeInk,{page="cube"},{page="hub"},{launchLeau(c)},{page="home_settings"},anim)
-                "hub"->AppHub(apps,ink,{page="cube"},{launchLeau(c)},{wallpaperReturnPage="hub";page="wallpaper"},{launch(c,it.intent);page="dashboard"},{page="l1vo"},{page="leacher"},{page="settings"},{editingApp=it;page="app_editor"},columns,appHubNavigation,hspace,vspace,appSize,highlightShape,highlightSize)
+                "dashboard"->HomeDashboard(apps,slots,homeInk,{page="cube"},{page="hub"},{vibee=true},{page="home_settings"},anim)
+                "hub"->AppHub(apps,ink,{page="cube"},{vibee=true},{wallpaperReturnPage="hub";page="wallpaper"},{launch(c,it.intent);page="hub"},{page="l1vo"},{page="leacher"},{page="settings"},{editingApp=it;page="app_editor"},columns,appHubNavigation,hspace,vspace,appSize,highlightShape,highlightSize)
                 "leacher"->LeacherScreen(apps,ink){page="hub"}
                 "home_settings"->HomeHubSettings(c,ink,{page="dashboard"},{activity?.pickHomeWidget() ?: Unit})
                 "app_editor"->editingApp?.let{AppEditorScreen(it,ink,{editingApp=null;page="hub"}){refresh++;editingApp=null}}
-                "l1vo"->L1voHub(ink,{page="hub"},{page="settings"},{launchLeau(c)},{wallpaperReturnPage="l1vo";page="wallpaper"})
+                "l1vo"->L1voHub(ink,{page="hub"},{page="settings"},{vibee=true},{wallpaperReturnPage="l1vo";page="wallpaper"})
                 "settings"->L1voSettings(p,dark,{dark=it;p.edit().putBoolean(DARK_THEME,it).apply()},{p.edit().putString(FONT,it).apply();refresh++},{page="cube"},{wallpaperReturnPage="settings";page="wallpaper"},{edit=it},{launch(c,Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))},{launch(c,Intent(Settings.ACTION_HOME_SETTINGS))},{refresh++})
                 "wallpaper"->WallpaperStudio(
                     ink,{page=wallpaperReturnPage},
@@ -82,7 +86,7 @@ import androidx.compose.ui.unit.sp
                 )
                 else->HomeCube(slots,apps,ink,{page="dashboard"},{page="hub"},{launchLeau(c)},{wallpaperReturnPage="cube";page="wallpaper"},{edit=it},anim)
             }
-            edit?.let{id->SlotPicker(apps,{edit=null}){saveSlot(c,id,it);edit=null;refresh++}}
+            edit?.let{id->SlotPicker(apps,{edit=null}){saveSlot(c,id,it);edit=null;refresh++}}\n            if(vibee) VibeeOverlay(apps,ink,{vibee=false})
         }
     }
 }
