@@ -7,6 +7,7 @@ import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -27,6 +28,8 @@ import androidx.compose.ui.unit.sp
     var wallpaper by remember{mutableStateOf(p.getString(WALLPAPER,null))}
     var dark by remember{mutableStateOf(p.getBoolean(DARK_THEME,false))}
     var vibee by remember{mutableStateOf(false)}
+    var settingsReturnPage by remember{mutableStateOf("cube")}
+    var settingsWallpaperTarget by remember{mutableStateOf<String?>(null)}
     val themeName=p.getString(L1VO_THEME,"default")?:"default"
     val themeTone=p.getFloat(L1VO_THEME_TONE,1f)
     applyL1voTheme(themeName,themeTone)
@@ -42,11 +45,27 @@ import androidx.compose.ui.unit.sp
     val configuredFontColor=p.getString(FONT_COLOR,"auto")?:"auto"
     fun targetWallpaper(target:String):String?=when(target){"all"->p.getString(WALLPAPER_ALL,null)?.takeIf{it.isNotBlank()}?:wallpaper;"home"->p.getString(WALLPAPER_HOME,null)?.takeIf{it.isNotBlank()}?:p.getString(WALLPAPER_ALL,null)?.takeIf{it.isNotBlank()}?:wallpaper;"hub"->p.getString(WALLPAPER_HUB,null)?.takeIf{it.isNotBlank()}?:p.getString(WALLPAPER_ALL,null)?.takeIf{it.isNotBlank()}?:wallpaper;else->p.getString(WALLPAPER_MAIN,null)?.takeIf{it.isNotBlank()}?:p.getString(WALLPAPER_ALL,null)?.takeIf{it.isNotBlank()}?:wallpaper}
     fun targetPlaylist(target:String):List<String>{val raw=when(target){"all"->p.getString(WALLPAPER_PLAYLIST_ALL,null);"home"->p.getString(WALLPAPER_PLAYLIST_HOME,null)?.takeIf{it.isNotBlank()}?:p.getString(WALLPAPER_PLAYLIST_ALL,null);"hub"->p.getString(WALLPAPER_PLAYLIST_HUB,null)?.takeIf{it.isNotBlank()}?:p.getString(WALLPAPER_PLAYLIST_ALL,null);else->p.getString(WALLPAPER_PLAYLIST_MAIN,null)?.takeIf{it.isNotBlank()}?:p.getString(WALLPAPER_PLAYLIST_ALL,null)};return raw?.split("\n")?.filter{it.isNotBlank()}?.ifEmpty{listOfNotNull(targetWallpaper(target))}?:listOfNotNull(targetWallpaper(target))}
-    val wallpaperTarget=when(page){"dashboard"->"home";"hub","leacher"->"hub";else->"main"}
+    val wallpaperTarget=settingsWallpaperTarget ?: when(page){"dashboard"->"home";"hub","leacher"->"hub";else->"main"}
     val activeWallpaper=targetWallpaper(wallpaperTarget)
     val activePlaylist=targetPlaylist(wallpaperTarget)
     val ink=if(dark)Color.White else if(configuredFontColor=="white")Color.White else if(configuredFontColor=="green")L1voGreen else if(configuredFontColor=="warm")Color(0xFFFFF4D6) else L1voInk
     val homeInk=if(page=="dashboard")Color.White else ink
+    BackHandler {
+        when {
+            vibee -> vibee=false
+            edit!=null -> edit=null
+            editingApp!=null -> { editingApp=null; page="hub" }
+            page=="dashboard" -> page="cube"
+            page=="hub" -> page="cube"
+            page=="l1vo" -> page="hub"
+            page=="leacher" -> page="hub"
+            page=="home_settings" -> page="dashboard"
+            page=="app_editor" -> { editingApp=null; page="hub" }
+            page=="wallpaper" -> { page=wallpaperReturnPage; settingsWallpaperTarget=null }
+            page=="settings" -> { page=settingsReturnPage; settingsWallpaperTarget=null }
+            else -> Unit
+        }
+    }
     val apps=remember(refresh){loadApps(c)}
     val slots=remember(refresh){loadSlots(c)}
     val anim=p.getBoolean(ANIMATIONS,true)
@@ -73,7 +92,7 @@ import androidx.compose.ui.unit.sp
             if(page in setOf("settings","home_settings","app_editor","wallpaper","l1vo")) Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha=if(dark) .32f else .20f)))
             when(page){
                 "dashboard"->HomeDashboard(apps,slots,homeInk,{page="cube"},{page="hub"},{vibee=true},{page="home_settings"},anim)
-                "hub"->AppHub(apps,ink,{page="cube"},{vibee=true},{wallpaperReturnPage="hub";page="wallpaper"},{launch(c,it.intent);page="hub"},{page="l1vo"},{page="leacher"},{page="settings"},{editingApp=it;page="app_editor"},columns,appHubNavigation,hspace,vspace,appSize,highlightShape,highlightSize)
+                "hub"->AppHub(apps,ink,{page="cube"},{vibee=true},{wallpaperReturnPage="hub";page="wallpaper"},{launch(c,it.intent);page="hub"},{page="l1vo"},{page="leacher"},{settingsReturnPage="hub";settingsWallpaperTarget="hub";page="settings"},{editingApp=it;page="app_editor"},columns,appHubNavigation,hspace,vspace,appSize,highlightShape,highlightSize)
                 "leacher"->LeacherScreen(apps,ink){page="hub"}
                 "home_settings"->HomeHubSettings(c,ink,{page="dashboard"},{activity?.pickHomeWidget() ?: Unit})
                 "app_editor"->editingApp?.let{AppEditorScreen(it,ink,{editingApp=null;page="hub"}){refresh++;editingApp=null}}
