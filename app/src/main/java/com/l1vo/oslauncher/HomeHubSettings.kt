@@ -19,18 +19,43 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun HomeHubSettings(context:Context,ink:Color,onBack:()->Unit,onPickWidget:()->Unit){
     val p=context.getSharedPreferences(PREFS,0)
-    val names=listOf("weather" to "Weather", "calendar" to "Calendar", "notes" to "Notes", "maps" to "Maps")
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal=20.dp).padding(top=18.dp+WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),bottom=24.dp)){
-        Row(verticalAlignment=Alignment.CenterVertically){IconButton(onClick=onBack){Icon(Icons.AutoMirrored.Outlined.ArrowBack,"Back",tint=ink)};Column(Modifier.weight(1f)){Text("Home Hub",color=ink,style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.SemiBold);Text("Personal home screen settings",color=L1voGreen)};Icon(Icons.Outlined.Widgets,"Widgets",tint=L1voGreen)}}
-        Spacer(Modifier.height(18.dp))
-        Text("Widgets",color=ink,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleLarge)
-        Spacer(Modifier.height(8.dp))
-        Text("The clock stays permanent. These widgets and any Android widgets can be rearranged, removed and restored.",color=ink.copy(alpha=.65f),style=MaterialTheme.typography.bodySmall)
-        Spacer(Modifier.height(12.dp))
-        Button(onClick=onPickWidget,modifier=Modifier.fillMaxWidth().height(54.dp)){Icon(Icons.Outlined.Add,"Add widget");Spacer(Modifier.width(8.dp));Text("ADD ANDROID WIDGET")}
-        Spacer(Modifier.height(14.dp))
-        names.forEach{(key,label)->var enabled by remember{mutableStateOf(p.getBoolean("home_system_$key",true))};Surface(shape=RoundedCornerShape(18.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.96f),modifier=Modifier.fillMaxWidth().padding(vertical=4.dp)){Row(Modifier.padding(15.dp),verticalAlignment=Alignment.CenterVertically){Icon(when(key){"weather"->Icons.Outlined.WbSunny;"calendar"->Icons.Outlined.CalendarMonth;"notes"->Icons.Outlined.EditNote;else->Icons.Outlined.Map},label,tint=L1voGreen);Spacer(Modifier.width(12.dp));Column(Modifier.weight(1f)){Text(label,color=ink,fontWeight=FontWeight.Medium);Text("Home Hub system widget",color=ink.copy(alpha=.6f),style=MaterialTheme.typography.bodySmall)};Switch(checked=enabled,onCheckedChange={enabled=it;p.edit().putBoolean("home_system_$key",it).apply()})}}}
-        Spacer(Modifier.height(12.dp))
-        Text("Drag & delete",color=ink,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleMedium)
-        Text("Long-press a widget on Home Hub to move it. While moving, use the red DELETE area at the bottom to remove it.",color=ink.copy(alpha=.65f),style=MaterialTheme.typography.bodySmall)
+    val names=listOf("weather" to "Weather","calendar" to "Calendar","notes" to "Notes","maps" to "Maps")
+    LazyColumn(
+        modifier=Modifier.fillMaxSize(),
+        contentPadding=PaddingValues(start=20.dp,end=20.dp,top=18.dp+WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),bottom=28.dp),
+        verticalArrangement=Arrangement.spacedBy(8.dp)
+    ){
+        item{
+            Row(verticalAlignment=Alignment.CenterVertically){
+                IconButton(onClick=onBack){Icon(Icons.AutoMirrored.Outlined.ArrowBack,"Back",tint=ink)}
+                Column(Modifier.weight(1f)){Text("Home Hub",color=ink,style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.SemiBold);Text("Personal home screen settings",color=L1voGreen)}
+                Icon(Icons.Outlined.Widgets,"Widgets",tint=L1voGreen)
+            }
+        }
+        item{Text("Widgets",color=ink,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleLarge)}
+        item{Text("Clock is permanent. Widgets can be moved, removed, and restored here.",color=ink.copy(alpha=.65f),style=MaterialTheme.typography.bodySmall)}
+        item{
+            Button(onClick=onPickWidget,modifier=Modifier.fillMaxWidth().height(54.dp)){
+                Icon(Icons.Outlined.Add,"Add widget");Spacer(Modifier.width(8.dp));Text("ADD ANDROID WIDGET")
+            }
+        }
+        items(names,key={it.first}){(key,label)->
+            val enabled=p.getBoolean("home_system_$key",true)
+            Surface(shape=RoundedCornerShape(14.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.96f),modifier=Modifier.fillMaxWidth()){
+                Row(Modifier.padding(14.dp),verticalAlignment=Alignment.CenterVertically){
+                    Icon(when(key){"weather"->Icons.Outlined.WbSunny;"calendar"->Icons.Outlined.CalendarMonth;"notes"->Icons.Outlined.EditNote;else->Icons.Outlined.Map},label,tint=L1voGreen)
+                    Spacer(Modifier.width(12.dp));Column(Modifier.weight(1f)){Text(label,color=ink,fontWeight=FontWeight.Medium);Text("System widget",color=ink.copy(alpha=.6f),style=MaterialTheme.typography.bodySmall)}
+                    Switch(checked=enabled,onCheckedChange={p.edit().putBoolean("home_system_$key",it).apply()})
+                }
+            }
+        }
+        item{
+            Surface(shape=RoundedCornerShape(14.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.92f),modifier=Modifier.fillMaxWidth()){
+                Column(Modifier.padding(15.dp)){
+                    Text("Drag & delete",color=ink,fontWeight=FontWeight.Bold)
+                    Text("Long-press a widget and drag it toward the red × at the bottom. The × grows/highlights when the widget reaches it. Release to delete; releasing anywhere else keeps the widget and hides the ×.",color=ink.copy(alpha=.65f),style=MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
     }
+}
