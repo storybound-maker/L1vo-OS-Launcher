@@ -17,7 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun HomeHubSettings(context:Context,ink:Color,onBack:()->Unit,onPickWidget:()->Unit){
+fun HomeHubSettings(context:Context,ink:Color,onBack:()->Unit,onPickWidget:()->Unit,onReset:()->Unit){
     val p=context.getSharedPreferences(PREFS,0)
     val names=listOf("weather" to "Weather","calendar" to "Calendar","notes" to "Notes","maps" to "Maps")
     LazyColumn(
@@ -32,7 +32,7 @@ fun HomeHubSettings(context:Context,ink:Color,onBack:()->Unit,onPickWidget:()->U
                 Icon(Icons.Outlined.Widgets,"Widgets",tint=L1voGreen)
             }
         }
-        item{Text("Widgets",color=ink,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleLarge)}
+        item{Text("Widgets",color=ink,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleLarge)}\n        item{OutlinedButton(onClick=onReset,modifier=Modifier.fillMaxWidth().height(54.dp)){Icon(Icons.Outlined.RestartAlt,"Reset");Spacer(Modifier.width(8.dp));Text("RESET HOME HUB")}}
         item{Text("Clock is permanent. Widgets can be moved, removed, and restored here.",color=ink.copy(alpha=.65f),style=MaterialTheme.typography.bodySmall)}
         item{
             Button(onClick=onPickWidget,modifier=Modifier.fillMaxWidth().height(54.dp)){
