@@ -28,7 +28,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 private fun appKey(pkg: String) = pkg.replace(Regex("[^A-Za-z0-9_.-]"), "_")
-private fun appPref(pkg: String, key: String) = "app_${key}_${appKey(pkg)}"
+fun appPref(pkg: String, key: String) = "app_${key}_${appKey(pkg)}"
 
 fun appDisplayName(c: Context, a: LaunchableApp): String =
     c.getSharedPreferences(PREFS, 0)
