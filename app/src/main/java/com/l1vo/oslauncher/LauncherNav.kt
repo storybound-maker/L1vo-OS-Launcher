@@ -41,7 +41,8 @@ import androidx.compose.ui.unit.sp
     val fontScale=p.getFloat(FONT_SIZE,1f)
     val configuredFontColor=p.getString(FONT_COLOR,"auto")?:"auto"
     fun targetWallpaper(target:String):String?=when(target){"all"->p.getString(WALLPAPER_ALL,null)?.takeIf{it.isNotBlank()}?:wallpaper;"home"->p.getString(WALLPAPER_HOME,null)?.takeIf{it.isNotBlank()}?:p.getString(WALLPAPER_ALL,null)?.takeIf{it.isNotBlank()}?:wallpaper;"hub"->p.getString(WALLPAPER_HUB,null)?.takeIf{it.isNotBlank()}?:p.getString(WALLPAPER_ALL,null)?.takeIf{it.isNotBlank()}?:wallpaper;else->p.getString(WALLPAPER_MAIN,null)?.takeIf{it.isNotBlank()}?:p.getString(WALLPAPER_ALL,null)?.takeIf{it.isNotBlank()}?:wallpaper}
-    fun targetPlaylist(target:String):List<String>{val raw=when(target){"all"->p.getString(WALLPAPER_PLAYLIST_ALL,null);"home"->p.getString(WALLPAPER_PLAYLIST_HOME,null)?.takeIf{it.isNotBlank()}?:p.getString(WALLPAPER_PLAYLIST_ALL,null);"hub"->p.getString(WALLPAPER_PLAYLIST_HUB,null)?.takeIf{it.isNotBlank()}?:p.getString(WALLPAPER_PLAYLIST_ALL,null);else->p.getString(WALLPAPER_PLAYLIST_MAIN,null)?.takeIf{it.isNotBlank()}?:p.getString(WALLPAPER_PLAYLIST_ALL,null)};return raw?.split("\n")?.filter{it.isNotBlank()}?.ifEmpty{listOfNotNull(targetWallpaper(target))}?:listOfNotNull(targetWallpaper(target))}
+    fun targetPlaylist(target:String):List<String>{val raw=when(target){"all"->p.getString(WALLPAPER_PLAYLIST_ALL,null);"home"->p.getString(WALLPAPER_PLAYLIST_HOME,null)?.takeIf{it.isNotBlank()}?:p.getString(WALLPAPER_PLAYLIST_ALL,null);"hub"->p.getString(WALLPAPER_PLAYLIST_HUB,null)?.takeIf{it.isNotBlank()}?:p.getString(WALLPAPER_PLAYLIST_ALL,null);else->p.getString(WALLPAPER_PLAYLIST_MAIN,null)?.takeIf{it.isNotBlank()}?:p.getString(WALLPAPER_PLAYLIST_ALL,null)};return raw?.split("
+")?.filter{it.isNotBlank()}?.ifEmpty{listOfNotNull(targetWallpaper(target))}?:listOfNotNull(targetWallpaper(target))}
     val wallpaperTarget=when(page){"dashboard"->"home";"hub","leacher"->"hub";else->"main"}
     val activeWallpaper=targetWallpaper(wallpaperTarget)
     val activePlaylist=targetPlaylist(wallpaperTarget)
@@ -70,6 +71,7 @@ import androidx.compose.ui.unit.sp
     ){
         Surface(Modifier.fillMaxSize(),color=if(useSystemWallpaper)Color.Transparent else Color.Transparent){
             WallpaperBackground(activeWallpaper,dark || page=="dashboard" || page=="home_settings",activePlaylist,interval,useSystemWallpaper)
+            if(page in setOf("settings","home_settings","app_editor","wallpaper","l1vo")) Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha=if(dark).32f else .20f)))
             when(page){
                 "dashboard"->HomeDashboard(apps,slots,homeInk,{page="cube"},{page="hub"},{vibee=true},{page="home_settings"},anim)
                 "hub"->AppHub(apps,ink,{page="cube"},{vibee=true},{wallpaperReturnPage="hub";page="wallpaper"},{launch(c,it.intent);page="hub"},{page="l1vo"},{page="leacher"},{page="settings"},{editingApp=it;page="app_editor"},columns,appHubNavigation,hspace,vspace,appSize,highlightShape,highlightSize)
@@ -85,9 +87,10 @@ import androidx.compose.ui.unit.sp
                     {p.edit().putString(WALLPAPER_MODE,"system").apply();runCatching{c.startActivity(Intent(WallpaperManager.ACTION_LIVE_WALLPAPER_CHOOSER))}},
                     activePlaylist,interval,mapOf("all" to targetPlaylist("all"),"main" to targetPlaylist("main"),"home" to targetPlaylist("home"),"hub" to targetPlaylist("hub")),mapOf("all" to intervalAll,"main" to intervalMain,"home" to intervalHome,"hub" to intervalHub)
                 )
-                else->HomeCube(slots,apps,ink,{page="dashboard"},{page="hub"},{launchLeau(c)},{wallpaperReturnPage="cube";page="wallpaper"},{edit=it},anim)
+                else->HomeCube(slots,apps,ink,{page="dashboard"},{page="hub"},{vibee=true},{wallpaperReturnPage="cube";page="wallpaper"},{edit=it},anim)
             }
-            edit?.let{id->SlotPicker(apps,{edit=null}){saveSlot(c,id,it);edit=null;refresh++}}\n            if(vibee) VibeeOverlay(apps,ink,{vibee=false})
+            edit?.let{id->SlotPicker(apps,{edit=null}){saveSlot(c,id,it);edit=null;refresh++}}
+            if(vibee) VibeeOverlay(apps,ink,{vibee=false})
         }
     }
 }
@@ -98,7 +101,8 @@ private fun saveWallpaperTarget(p:android.content.SharedPreferences,target:Strin
     e.putString(WALLPAPER,u).putString(WALLPAPER_MODE,"static").apply()
 }
 private fun savePlaylistTarget(p:android.content.SharedPreferences,target:String,items:List<String>,interval:Long){
-    val raw=items.joinToString("\n");val e=p.edit()
+    val raw=items.joinToString("
+");val e=p.edit()
     fun save(suffix:String){val playlistKey=if(suffix=="all")WALLPAPER_PLAYLIST_ALL else if(suffix=="main")WALLPAPER_PLAYLIST_MAIN else if(suffix=="home")WALLPAPER_PLAYLIST_HOME else WALLPAPER_PLAYLIST_HUB;val intervalKey=if(suffix=="all")WALLPAPER_INTERVAL_ALL else if(suffix=="main")WALLPAPER_INTERVAL_MAIN else if(suffix=="home")WALLPAPER_INTERVAL_HOME else WALLPAPER_INTERVAL_HUB;val wallpaperKey=if(suffix=="all")WALLPAPER_ALL else if(suffix=="main")WALLPAPER_MAIN else if(suffix=="home")WALLPAPER_HOME else WALLPAPER_HUB;e.putString(playlistKey,raw).putLong(intervalKey,interval);if(items.isNotEmpty())e.putString(wallpaperKey,items.first())}
     save(target)
     e.putLong(WALLPAPER_INTERVAL,interval).putString(WALLPAPER_PLAYLIST,raw).putString(WALLPAPER_MODE,"static").apply()
