@@ -32,7 +32,8 @@ fun HomeHubSettings(context:Context,ink:Color,onBack:()->Unit,onPickWidget:()->U
                 Icon(Icons.Outlined.Widgets,"Widgets",tint=L1voGreen)
             }
         }
-        item{Text("Widgets",color=ink,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleLarge)}\n        item{OutlinedButton(onClick=onReset,modifier=Modifier.fillMaxWidth().height(54.dp)){Icon(Icons.Outlined.RestartAlt,"Reset");Spacer(Modifier.width(8.dp));Text("RESET HOME HUB")}}
+        item{Text("Widgets",color=ink,fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleLarge)}
+        item{OutlinedButton(onClick=onReset,modifier=Modifier.fillMaxWidth().height(54.dp)){Icon(Icons.Outlined.RestartAlt,"Reset");Spacer(Modifier.width(8.dp));Text("RESET HOME HUB")}}
         item{Text("Clock is permanent. Widgets can be moved, removed, and restored here.",color=ink.copy(alpha=.65f),style=MaterialTheme.typography.bodySmall)}
         item{
             Button(onClick=onPickWidget,modifier=Modifier.fillMaxWidth().height(54.dp)){
