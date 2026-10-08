@@ -33,7 +33,18 @@ class MainActivity : ComponentActivity() {
         )
     }
 
-    fun resetHomeHubWidgets() {\n        val p=getSharedPreferences(PREFS,MODE_PRIVATE)\n        p.getStringSet("home_widget_ids",emptySet())!!.mapNotNull{it.toIntOrNull()}.forEach{widgetHost.deleteAppWidgetId(it)}\n        val e=p.edit().remove("home_widget_ids")\n        listOf("weather","calendar","notes","maps").forEach{key->\n            e.putBoolean("home_system_$key",true)\n            e.remove("system_x_$key").remove("system_y_$key")\n        }\n        e.apply()\n    }\n\n    override fun onActivityResult(requestCode:Int,resultCode:Int,data:Intent?) {
+    fun resetHomeHubWidgets() {
+        val p=getSharedPreferences(PREFS,MODE_PRIVATE)
+        p.getStringSet("home_widget_ids",emptySet())!!.mapNotNull{it.toIntOrNull()}.forEach{widgetHost.deleteAppWidgetId(it)}
+        val e=p.edit().remove("home_widget_ids")
+        listOf("weather","calendar","notes","maps").forEach{key->
+            e.putBoolean("home_system_$key",true)
+            e.remove("system_x_$key").remove("system_y_$key")
+        }
+        e.apply()
+    }
+
+    override fun onActivityResult(requestCode:Int,resultCode:Int,data:Intent?) {
         super.onActivityResult(requestCode,resultCode,data)
         if(requestCode==pickWidgetRequest){
             val id=data?.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,AppWidgetManager.INVALID_APPWIDGET_ID)
