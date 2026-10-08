@@ -418,7 +418,6 @@ fun AppEditorScreen(
                     OutlinedButton(
                         onClick = {
                             clearAppCustomization(context, app.packageName)
-                            setAppSkin(context, app.packageName, selectedSkin)
                             onSaved()
                             onBack()
                         },
@@ -453,6 +452,7 @@ fun AppEditorScreen(
                                 ).apply()
                             }
 
+                            setAppSkin(context, app.packageName, selectedSkin)
                             onSaved()
                             onBack()
                         },
